@@ -1,9 +1,9 @@
-# Environment variables & Secrets
+# Environment variables & secrets (keep private)
 .env
 .env.local
 *.env
 
-# Python byte-code & build artifacts
+# Python cache & build artifacts
 __pycache__/
 *.py[cod]
 *$py.class
@@ -19,28 +19,21 @@ venv/
 env/
 ENV/
 
-# Testing & Coverage
+# Testing & coverage artifacts
 .pytest_cache/
 .coverage
 htmlcov/
 .tox/
 
-# Streamlit runtime
+# Streamlit runtime cache
 .streamlit/
 
-# Persistent data & Vector indices (preserve directory structure via .gitkeep)
+# Persistent data generated at runtime (indices & raw uploads)
 data/vectorstore/*
-!data/vectorstore/.gitkeep
 data/raw/*
-!data/raw/.gitkeep
 data/processed/*
-!data/processed/.gitkeep
-data/samples/*
-!data/samples/.gitkeep
 
-
-
-# IDEs & OS artifacts
+# IDE and OS files
 .vscode/
 .idea/
 *.sublime-project

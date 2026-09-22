@@ -107,34 +107,18 @@ python scripts/rebuild_index.py --reingest
 
 ---
 
-## 5. Docker Deployment
+## 5. Running Automated Tests
 
-### Build Image
+Run the complete test suite across all 4 system layers:
 ```bash
-docker build -t rag-document-assistant:latest .
-```
-
-### Run Container
-```bash
-docker run -d \
-  --name rag-assistant \
-  -p 8501:8501 \
-  --env-file .env \
-  -v $(pwd)/data/vectorstore:/app/data/vectorstore \
-  rag-document-assistant:latest
-```
-
----
-
-## 6. Running Tests
-
-```bash
-# Run all tests
 python -m unittest discover tests
-
-# Run specific domain test suite
-python -m unittest tests/test_ingestion.py
-python -m unittest tests/test_retrieval.py
-python -m unittest tests/test_generation.py
-python -m unittest tests/test_api.py
 ```
+
+Or run individual domain test suites:
+```bash
+python -m unittest tests/test_ingestion.py   # Loader, parser, chunker, registry
+python -m unittest tests/test_retrieval.py   # Embeddings, FAISS search, persistence
+python -m unittest tests/test_generation.py  # Prompting, Q&A synthesis, summarizer
+python -m unittest tests/test_api.py         # FastAPI REST endpoints
+```
+
