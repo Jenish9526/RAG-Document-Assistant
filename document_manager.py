@@ -1,33 +1,8 @@
-"""
-document_manager.py
-====================
-
-Purpose
--------
-Manages the "document layer" of the app: which documents have been
-uploaded, duplicate detection, per-document statistics, and wiring
-together document_processor.py + embeddings.py + vector_store.py
-whenever a new file arrives.
-
-This file also owns the single shared VectorStore instance (loaded
-once via Streamlit caching) so every part of the app searches/writes
-to the same index.
-
-Imported libraries
--------------------
-- streamlit (for @st.cache_resource / session_state)
-- pickle    (persisting the "document registry" — the list of already
-             processed documents / hashes — between app restarts)
-
-Used by
--------
-app.py -> file upload handler, sidebar document list, "Clear Documents".
-"""
+"""Document management module handling document upload, registry, and indexing."""
 
 import os
 import pickle
 from typing import Dict, List
-
 import streamlit as st
 
 from config import (
@@ -43,28 +18,9 @@ from vector_store import VectorStore
 from utils import compute_file_hash, format_file_size
 
 
-# ---------------------------------------------------------------------
-# SHARED VECTOR STORE (singleton, loaded once per Streamlit session)
-# ---------------------------------------------------------------------
-
 @st.cache_resource(show_spinner=False)
 def get_vector_store() -> VectorStore:
-    """
-    Function: get_vector_store()
-
-    Purpose:
-        Returns the single shared VectorStore instance for the app.
-        `@st.cache_resource` ensures this is created only once and then
-        reused across every user interaction (Streamlit re-runs the
-        whole script on every click, so without this we'd lose the
-        index every time).
-
-    Output:
-        A VectorStore with any previously saved index already loaded.
-
-    Used by:
-        Every function below, and app.py directly.
-    """
+    """Return the cached singleton VectorStore instance."""
     store = VectorStore()
     loaded = store.load_index()
     if not loaded:
@@ -76,7 +32,7 @@ def get_vector_store() -> VectorStore:
 
 
 def _load_registry() -> Dict[str, Dict]:
-    """Loads the {file_hash: {"filename":.., "pages":.., "characters":.., "chunks":..}} registry."""
+    """Load the document registry from disk if valid index files exist."""
     if not (os.path.exists(FAISS_INDEX_PATH) and os.path.exists(METADATA_PATH)):
         if os.path.exists(DOC_REGISTRY_PATH):
             os.remove(DOC_REGISTRY_PATH)
@@ -88,51 +44,20 @@ def _load_registry() -> Dict[str, Dict]:
 
 
 def _save_registry(registry: Dict[str, Dict]):
+    """Persist the document registry mapping to disk."""
     with open(DOC_REGISTRY_PATH, "wb") as f:
         pickle.dump(registry, f)
 
 
 def get_document_registry() -> Dict[str, Dict]:
-    """
-    Function: get_document_registry()
-
-    Purpose:
-        Exposes the current list of processed documents (with stats)
-        to the UI layer (sidebar document list).
-
-    Output:
-        Dict keyed by file hash -> document info dict.
-
-    Used by:
-        app.py -> sidebar.
-    """
+    """Retrieve the in-memory or persisted document registry."""
     if "doc_registry" not in st.session_state:
         st.session_state.doc_registry = _load_registry()
     return st.session_state.doc_registry
 
 
-# ---------------------------------------------------------------------
-# VALIDATION
-# ---------------------------------------------------------------------
-
 def validate_file(filename: str, file_bytes: bytes) -> str:
-    """
-    Function: validate_file()
-
-    Purpose:
-        Runs basic sanity checks before spending time processing a file.
-
-    Input:
-        filename: original filename.
-        file_bytes: raw file bytes.
-
-    Output:
-        An empty string "" if the file is valid, otherwise a
-        user-friendly error message.
-
-    Used by:
-        add_document() below.
-    """
+    """Validate file extension, non-emptiness, and size constraints."""
     _, ext = os.path.splitext(filename.lower())
     if ext not in ALLOWED_EXTENSIONS:
         return f"Unsupported file type '{ext}'. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}."
@@ -147,32 +72,8 @@ def validate_file(filename: str, file_bytes: bytes) -> str:
     return ""
 
 
-# ---------------------------------------------------------------------
-# ADD DOCUMENT
-# ---------------------------------------------------------------------
-
 def add_document(filename: str, file_bytes: bytes) -> Dict:
-    """
-    Function: add_document()
-
-    Purpose:
-        The main "upload a document" workflow:
-        validate -> duplicate-check -> extract+chunk -> embed -> index -> save.
-
-    Input:
-        filename: original filename.
-        file_bytes: raw uploaded bytes.
-
-    Output:
-        {
-            "success": bool,
-            "message": str,        # shown to the user
-            "duplicate": bool,
-        }
-
-    Used by:
-        app.py -> file uploader handler.
-    """
+    """Validate, deduplicate, chunk, embed, and index a new uploaded document."""
     error = validate_file(filename, file_bytes)
     if error:
         return {"success": False, "message": error, "duplicate": False}
@@ -216,21 +117,8 @@ def add_document(filename: str, file_bytes: bytes) -> Dict:
     }
 
 
-# ---------------------------------------------------------------------
-# CLEAR DOCUMENTS
-# ---------------------------------------------------------------------
-
 def clear_all_documents():
-    """
-    Function: clear_all_documents()
-
-    Purpose:
-        Wipes the vector database AND the document registry — used by
-        the sidebar's "Clear Documents" button.
-
-    Used by:
-        app.py
-    """
+    """Clear in-memory and on-disk vector store and document registry."""
     store = get_vector_store()
     store.clear_index()
 
@@ -240,5 +128,6 @@ def clear_all_documents():
 
 
 def list_document_names() -> List[str]:
-    """Returns just the filenames of all currently indexed documents."""
+    """Return filenames of all currently indexed documents."""
     return [info["filename"] for info in get_document_registry().values()]
+

@@ -31,10 +31,7 @@ htmlcov/
 # Persistent data & Vector indices (preserve directory structure via .gitkeep)
 vector_db/*
 !vector_db/.gitkeep
-data/documents/*
-!data/documents/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
+
 
 # IDEs & OS artifacts
 .vscode/

@@ -152,14 +152,11 @@ Access the app at `http://localhost:8501`.
 
 ## 🧪 Testing & Validation
 
-The project includes both isolated unit/integration tests and live API validation scripts:
+Run the automated test suite covering all pipeline components:
 
 ```bash
-# 1. Run all unit and integration tests (mocked & fast, safe for CI)
+# Run all unit and integration tests (mocked & fast, safe for CI)
 python -m unittest discover tests
-
-# 2. Run live end-to-end tests against configured LLM API
-python tests/live_test_all_functions.py
 ```
 
 ### Test Coverage Highlights
@@ -179,13 +176,9 @@ RAG_Document_Assistant/
 │   │   └── ci.yml               # Automated CI test pipeline
 │   ├── ISSUE_TEMPLATE/          # Structured issue templates
 │   └── PULL_REQUEST_TEMPLATE.md # PR standards checklist
-├── data/
-│   ├── documents/               # Raw uploaded document storage
-│   └── processed/               # Intermediate processing artifacts
 ├── tests/
 │   ├── __init__.py
-│   ├── test_rag_pipeline.py     # Comprehensive unit/integration test suite
-│   └── live_test_all_functions.py # Live API and RAG pipeline verification
+│   └── test_rag_pipeline.py     # Comprehensive unit/integration test suite
 ├── vector_db/                   # Persisted FAISS vector indices & registries
 ├── app.py                       # Streamlit UI & interaction orchestrator
 ├── chat_manager.py              # Session-state chat history manager
@@ -203,6 +196,7 @@ RAG_Document_Assistant/
 ├── pyproject.toml               # Modern Python packaging configuration
 ├── requirements.txt             # Direct dependencies
 ├── CONTRIBUTING.md              # Open-source contribution guidelines
+
 ├── CODE_OF_CONDUCT.md           # Community code of conduct
 ├── SECURITY.md                  # Vulnerability reporting protocol
 └── LICENSE                      # MIT Open Source License

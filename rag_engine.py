@@ -1,29 +1,4 @@
-"""
-rag_engine.py
-=============
-
-Purpose
--------
-The CENTRAL module of the whole project. It connects every other piece:
-
-    User question
-        -> generate_query_embedding()      (embeddings.py)
-        -> vector_store.search()           (vector_store.py)
-        -> retrieve_relevant_chunks()
-        -> build_context()
-        -> build_prompt()
-        -> llm_service.generate_response() (llm_service.py)
-        -> answer_question() returns final answer + sources
-
-This is the file that most clearly demonstrates "Retrieval-Augmented
-Generation": RETRIEVAL (finding relevant chunks) followed by
-GENERATION (asking the LLM to write an answer using those chunks).
-
-Used by
--------
-app.py -> whenever the user submits a question, a document summary
-request, or asks for suggested questions.
-"""
+"""RAG execution engine handling semantic retrieval, prompt assembly, and answer synthesis."""
 
 import time
 from typing import List, Dict, Tuple
@@ -34,69 +9,17 @@ from vector_store import VectorStore
 import llm_service
 
 
-# ---------------------------------------------------------------------
-# RETRIEVAL
-# ---------------------------------------------------------------------
-
 def retrieve_relevant_chunks(
     query: str, store: VectorStore, top_k: int = TOP_K
 ) -> List[Tuple[Dict, float]]:
-    """
-    Function: retrieve_relevant_chunks()
-
-    Purpose:
-        Converts the question into an embedding and searches the FAISS
-        vector store for the most semantically similar chunks.
-
-    Input:
-        query: the user's question.
-        store: the active VectorStore instance.
-        top_k: how many chunks to retrieve.
-
-    Output:
-        A list of (chunk_dict, similarity_score) tuples, sorted best-first.
-        Chunks scoring below SIMILARITY_THRESHOLD are filtered out —
-        this is a key part of hallucination control (see section below).
-
-    Used by:
-        answer_question() in this file.
-    """
+    """Retrieve chunks scoring above SIMILARITY_THRESHOLD for a user query."""
     query_vector = generate_query_embedding(query)
     raw_results = store.search(query_vector, top_k=top_k)
+    return [(chunk, score) for chunk, score in raw_results if score >= SIMILARITY_THRESHOLD]
 
-    # Filter out weakly-related chunks so we don't force the LLM to
-    # "make something up" from irrelevant context.
-    relevant = [(chunk, score) for chunk, score in raw_results if score >= SIMILARITY_THRESHOLD]
-    return relevant
-
-
-# ---------------------------------------------------------------------
-# CONTEXT + PROMPT CONSTRUCTION
-# ---------------------------------------------------------------------
 
 def build_context(retrieved: List[Tuple[Dict, float]]) -> str:
-    """
-    Function: build_context()
-
-    Purpose:
-        Formats retrieved chunks into one text block the LLM can read,
-        clearly labeling which document/page each piece came from
-        (so the LLM can reference sources in its answer if asked to).
-
-    Input:
-        retrieved: output of retrieve_relevant_chunks().
-
-    Output:
-        A single formatted string, e.g.:
-            [Source 1: DAA.pdf, Page 12]
-            Dynamic programming is...
-
-            [Source 2: DAA.pdf, Page 13]
-            ...
-
-    Used by:
-        build_prompt() below.
-    """
+    """Format retrieved document chunks into labeled context blocks."""
     blocks = []
     for i, (chunk, _score) in enumerate(retrieved, start=1):
         blocks.append(
@@ -106,35 +29,15 @@ def build_context(retrieved: List[Tuple[Dict, float]]) -> str:
 
 
 def build_prompt(query: str, context: str, answer_style: str = "Simple", exam_mode: bool = False) -> str:
-    """
-    Function: build_prompt()
-
-    Purpose:
-        Builds the final instruction text sent to the LLM, combining:
-        - a strict system-style instruction (rules to reduce hallucination)
-        - the retrieved document context
-        - the user's actual question
-        - the requested answer style (Simple / Detailed) and Exam Mode.
-
-    Input:
-        query: user's question.
-        context: output of build_context().
-        answer_style: "Simple" or "Detailed".
-        exam_mode: if True, ask for an exam-ready structured answer.
-
-    Output:
-        The complete prompt string ready to send to llm_service.generate_response().
-
-    Used by:
-        generate_answer() below.
-    """
+    """Assemble the system instructions, context, and user question into an LLM prompt."""
     style_instruction = (
         "Use easy language, short paragraphs, and bullet points where useful. "
         "Avoid unnecessary technical jargon."
         if answer_style == "Simple" else
-        "Provide a more thorough explanation, including relevant technical detail "
-        "and examples if present in the context. Make it suitable for exam revision."
+        "Provide a more thorough explanation, including relevant technical details "
+        "and examples if present in the context."
     )
+
 
     exam_instruction = ""
     if exam_mode:
@@ -144,7 +47,7 @@ def build_prompt(query: str, context: str, answer_style: str = "Simple", exam_mo
             "Advantages, Disadvantages, Complexity.\n"
         )
 
-    prompt = f"""You are a document assistant. Answer the user's question using ONLY the provided document context below.
+    return f"""You are a document assistant. Answer the user's question using ONLY the provided document context below.
 
 Rules:
 1. Prefer information from the provided context above your own general knowledge.
@@ -161,37 +64,12 @@ Document Context:
 Question: {query}
 
 Answer:"""
-    return prompt
 
-
-# ---------------------------------------------------------------------
-# GENERATION
-# ---------------------------------------------------------------------
 
 def generate_answer(prompt: str) -> str:
-    """
-    Function: generate_answer()
-
-    Purpose:
-        Thin wrapper around llm_service.generate_response(), kept
-        separate so rag_engine.py never imports "requests" directly —
-        all HTTP/API concerns stay inside llm_service.py.
-
-    Input:
-        prompt: full prompt string from build_prompt().
-
-    Output:
-        LLM-generated answer text.
-
-    Used by:
-        answer_question() below.
-    """
+    """Invoke LLM service to produce an answer for the given prompt."""
     return llm_service.generate_response(prompt)
 
-
-# ---------------------------------------------------------------------
-# MAIN ENTRY POINT
-# ---------------------------------------------------------------------
 
 def answer_question(
     query: str,
@@ -200,31 +78,7 @@ def answer_question(
     answer_style: str = "Simple",
     exam_mode: bool = False,
 ) -> Dict:
-    """
-    Function: answer_question()
-
-    Purpose:
-        The single function app.py calls for every chat message. Runs
-        the full RAG pipeline end-to-end.
-
-    Input:
-        query: user's question.
-        store: active VectorStore.
-        top_k: number of chunks to retrieve.
-        answer_style: "Simple" or "Detailed".
-        exam_mode: bool, whether to use exam-structured answers.
-
-    Output:
-        {
-            "answer": "<generated text>",
-            "sources": [ {"document":.., "page":.., "score":..}, ... ],
-            "chunks": [ ...raw retrieved chunk dicts... ],
-            "found_context": True/False
-        }
-
-    Used by:
-        app.py -> chat input handler.
-    """
+    """Execute end-to-end RAG question answering pipeline."""
     query = query.strip()
     if not query:
         return {
@@ -274,49 +128,18 @@ def answer_question(
     }
 
 
-# ---------------------------------------------------------------------
-# DOCUMENT SUMMARIZATION (chunk-based, "map-reduce" style)
-# ---------------------------------------------------------------------
-
 def summarize_document(document_name: str, store: VectorStore, max_chunks_per_batch: int = 6) -> str:
-    """
-    Function: summarize_document()
-
-    Purpose:
-        Generates a structured summary of one document WITHOUT sending
-        the entire document to the LLM in one go (which could exceed
-        token limits for large documents).
-
-    How it works (map-reduce style):
-        Document -> chunks (already stored in FAISS metadata)
-                 -> grouped into small batches
-                 -> each batch summarized separately ("map")
-                 -> partial summaries combined into one final summary ("reduce")
-
-    Input:
-        document_name: the filename to summarize.
-        store: active VectorStore (chunks are read from its metadata).
-        max_chunks_per_batch: how many chunks to summarize per LLM call.
-
-    Output:
-        A single formatted summary string covering: Main Topic,
-        Important Concepts, Key Points, Important Definitions.
-
-    Used by:
-        app.py -> "Summarize Document" button.
-    """
+    """Generate structured summary of a document using chunk-based map-reduce aggregation."""
     chunks = store.chunks_for_document(document_name)
     if not chunks:
         return "No content found for this document."
 
-    # Sort by page, then chunk_id, so the summary follows reading order.
     chunks = sorted(chunks, key=lambda c: (c["page"], c["chunk_id"]))
 
-    # --- MAP step: summarize each batch of chunks ---
     partial_summaries = []
     for i in range(0, len(chunks), max_chunks_per_batch):
         if i > 0:
-            time.sleep(1.5)  # Pace batch calls to stay within free-tier TPM limits
+            time.sleep(1.5)
         batch = chunks[i:i + max_chunks_per_batch]
         batch_text = "\n\n".join(c["text"] for c in batch)
         batch_prompt = (
@@ -329,7 +152,6 @@ def summarize_document(document_name: str, store: VectorStore, max_chunks_per_ba
         except (llm_service.LLMNotConfiguredError, RuntimeError) as exc:
             return f"Could not generate summary: {exc}"
 
-    # --- REDUCE step: combine partial summaries into a final structured summary ---
     combined = "\n\n".join(partial_summaries)
     final_prompt = f"""Based on the following partial summaries of a document called "{document_name}", write one combined, well-structured summary with these sections:
 
@@ -350,36 +172,14 @@ Final Summary:"""
         return f"Could not generate final summary: {exc}"
 
 
-# ---------------------------------------------------------------------
-# SUGGESTED QUESTIONS
-# ---------------------------------------------------------------------
-
 def generate_suggested_questions(document_name: str, store: VectorStore) -> List[str]:
-    """
-    Function: generate_suggested_questions()
-
-    Purpose:
-        Suggests a handful of questions the user might want to ask
-        about a given document, using a sample of its content.
-        Falls back to static generic questions if the LLM is not
-        configured or the call fails, so this feature never crashes the app.
-
-    Input:
-        document_name: filename to generate suggestions for.
-        store: active VectorStore.
-
-    Output:
-        A list of up to 5 question strings.
-
-    Used by:
-        app.py -> "Suggested Questions" button, shown after upload.
-    """
+    """Generate suggested exploration questions for an indexed document with static fallbacks."""
     fallback = [
         "What is the main topic of this document?",
         "Explain the important concepts covered here.",
         "What are the key definitions in this document?",
         "Give me a summary of this document.",
-        "What are the most important topics for an exam?",
+        "What are the key takeaways from this document?",
     ]
 
     chunks = store.chunks_for_document(document_name)
@@ -389,7 +189,7 @@ def generate_suggested_questions(document_name: str, store: VectorStore) -> List
     sample_text = "\n\n".join(c["text"] for c in chunks[:4])
     prompt = (
         "Based on the following document excerpt, suggest exactly 5 short, useful "
-        "questions a student might ask about it. Return ONLY the 5 questions, "
+        "questions a reader might ask about it. Return ONLY the 5 questions, "
         "one per line, no numbering, no extra text.\n\n"
         f"{sample_text}\n\nQuestions:"
     )
@@ -400,3 +200,4 @@ def generate_suggested_questions(document_name: str, store: VectorStore) -> List
         return questions[:5] if questions else fallback
     except (llm_service.LLMNotConfiguredError, RuntimeError):
         return fallback
+

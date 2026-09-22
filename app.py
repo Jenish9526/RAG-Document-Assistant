@@ -1,33 +1,5 @@
-"""
-app.py
-======
+"""Streamlit user interface for RAG Document Assistant."""
 
-Purpose
--------
-The Streamlit entry point — the file you run with:
-
-    streamlit run app.py
-
-Purpose of this file:
-    Pure UI / orchestration. It does NOT contain RAG logic itself —
-    it calls into document_manager.py, chat_manager.py, and
-    rag_engine.py, and renders their results.
-
-How this connects to the rest of the project:
-
-    app.py
-      ├── document_manager.py  -> upload, dedup, stats, vector store access
-      ├── chat_manager.py      -> chat history (session_state)
-      ├── rag_engine.py        -> answer_question(), summarize_document(),
-      │                          generate_suggested_questions()
-      └── llm_service.py       -> (indirectly) checks is_configured()
-
-Run instructions (Windows):
-    python -m venv venv
-    venv\\Scripts\\activate
-    pip install -r requirements.txt
-    streamlit run app.py
-"""
 
 import streamlit as st
 
