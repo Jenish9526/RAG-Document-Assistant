@@ -194,7 +194,7 @@ Create a `.env` file in the project root directory:
 # =====================================================================
 LLM_API_KEY=your_gemini_api_key_here
 LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-LLM_MODEL=gemini-3.5-flash-lite
+LLM_MODEL=gemini-3.6-flash
 
 # =====================================================================
 # Optional Pipeline Parameters

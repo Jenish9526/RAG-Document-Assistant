@@ -26,7 +26,7 @@ Returns service status, configured LLM model, base URL, and total indexed vector
 {
   "status": "ok",
   "llm_configured": true,
-  "model": "gemini-3.5-flash-lite",
+  "model": "gemini-3.6-flash",
   "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
   "total_indexed_chunks": 48
 }

@@ -25,11 +25,16 @@ def extract_text_from_txt(file_bytes: bytes) -> List[Dict]:
 
 
 def extract_text_from_docx(file_bytes: bytes) -> List[Dict]:
-    """Extract paragraph text from Microsoft Word (.docx) binary data."""
+    """Extract paragraph and table text from Microsoft Word (.docx) binary data."""
     import docx
 
     document = docx.Document(BytesIO(file_bytes))
     paragraphs = [p.text for p in document.paragraphs if p.text.strip()]
+    for table in document.tables:
+        for row in table.rows:
+            row_text = " | ".join(c.text.strip() for c in row.cells if c.text.strip())
+            if row_text:
+                paragraphs.append(row_text)
     full_text = "\n".join(paragraphs)
     if not full_text.strip():
         return []

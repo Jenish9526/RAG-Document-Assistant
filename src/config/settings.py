@@ -36,7 +36,7 @@ SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "0.25"))
 
 # LLM provider settings
 LLM_BASE_URL_DEFAULT = "https://generativelanguage.googleapis.com/v1beta/openai/"
-LLM_MODEL_DEFAULT = "gemini-3.5-flash-lite"
+LLM_MODEL_DEFAULT = "gemini-3.6-flash"
 LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "800"))
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.3"))
 

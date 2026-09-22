@@ -63,10 +63,15 @@ def generate_response(prompt: str) -> str:
     for attempt in range(3):
         try:
             response = requests.post(url, headers=headers, json=payload, timeout=60)
-            if response.status_code == 429 and attempt < 2:
-                wait_sec = 4.0 * (attempt + 1)
+            if response.status_code in (429, 500, 502, 503, 504) and attempt < 2:
+                wait_sec = 3.0 * (attempt + 1)
                 try:
-                    err_msg = response.json().get("error", {}).get("message", "")
+                    err_json = response.json()
+                    err_msg = ""
+                    if isinstance(err_json, dict):
+                        err_msg = err_json.get("error", {}).get("message", "")
+                    elif isinstance(err_json, list) and err_json and isinstance(err_json[0], dict):
+                        err_msg = err_json[0].get("error", {}).get("message", "")
                     match = re.search(r"try again in ([\d\.]+)s", err_msg, re.IGNORECASE)
                     if match:
                         wait_sec = min(float(match.group(1)) + 0.5, 20.0)
@@ -79,7 +84,12 @@ def generate_response(prompt: str) -> str:
                 detail = ""
                 try:
                     err_data = response.json()
-                    detail = err_data.get("error", {}).get("message", "")
+                    if isinstance(err_data, dict):
+                        detail = err_data.get("error", {}).get("message", "")
+                    elif isinstance(err_data, list) and err_data and isinstance(err_data[0], dict):
+                        detail = err_data[0].get("error", {}).get("message", "")
+                    else:
+                        detail = str(err_data)
                 except Exception:
                     detail = response.text
                 msg = f"HTTP {response.status_code}: {detail}" if detail else str(response.status_code)

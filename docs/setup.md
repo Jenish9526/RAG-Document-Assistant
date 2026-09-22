@@ -49,7 +49,7 @@ cp .env.example .env
 ```env
 LLM_API_KEY=your_google_ai_studio_api_key_here
 LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-LLM_MODEL=gemini-3.5-flash-lite
+LLM_MODEL=gemini-3.6-flash
 ```
 
 ### Alternative: Groq Cloud

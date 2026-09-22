@@ -125,7 +125,7 @@ def get_document_registry() -> Dict[str, Dict]:
     """Retrieve the in-memory or persisted document registry."""
     try:
         import streamlit as st
-        if hasattr(st, "session_state") and "doc_registry" in st.session_state:
+        if hasattr(st, "runtime") and st.runtime.exists() and hasattr(st, "session_state") and "doc_registry" in st.session_state:
             return st.session_state.doc_registry
     except Exception:
         pass
@@ -185,7 +185,7 @@ def add_document(filename: str, file_bytes: bytes, store: Optional[VectorStore] 
 
     try:
         import streamlit as st
-        if hasattr(st, "session_state"):
+        if hasattr(st, "runtime") and st.runtime.exists() and hasattr(st, "session_state"):
             st.session_state.doc_registry = registry
     except Exception:
         pass
@@ -208,7 +208,7 @@ def clear_all_documents(store: Optional[VectorStore] = None):
 
     try:
         import streamlit as st
-        if hasattr(st, "session_state") and "doc_registry" in st.session_state:
+        if hasattr(st, "runtime") and st.runtime.exists() and hasattr(st, "session_state") and "doc_registry" in st.session_state:
             st.session_state.doc_registry = {}
     except Exception:
         pass
