@@ -1,0 +1,33 @@
+# Git & GitHub
+.git/
+.gitignore
+.github/
+
+# Environment files
+.env
+*.env
+
+# Python & Virtualenv
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Testing & Artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+
+# Data and Vector Store
+vector_db/
+data/documents/
+data/processed/
+
+# IDE files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
