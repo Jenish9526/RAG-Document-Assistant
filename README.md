@@ -122,15 +122,22 @@ LLM_MODEL=gemini-3.5-flash-lite
 
 ### 4. Run the Application
 
+#### Interactive Web UI (Streamlit):
 ```powershell
-# Direct invocation:
-.\venv\Scripts\python.exe -m streamlit run app.py
-
-# Or if virtualenv is activated:
 streamlit run app.py
 ```
+Visit `http://localhost:8501`.
 
-Navigate to `http://localhost:8501` in your browser.
+#### Headless REST API (FastAPI):
+```powershell
+uvicorn src.api.routes:app --host 0.0.0.0 --port 8000 --reload
+```
+Interactive Swagger documentation available at `http://localhost:8000/docs`.
+
+#### Batch CLI Ingestion:
+```powershell
+python scripts/ingest.py --path data/raw
+```
 
 ---
 
@@ -152,18 +159,18 @@ Access the app at `http://localhost:8501`.
 
 ## 🧪 Testing & Validation
 
-Run the automated test suite covering all pipeline components:
+Run the modular automated test suite across domain packages:
 
 ```bash
-# Run all unit and integration tests (mocked & fast, safe for CI)
+# Run all unit, integration, and API tests
 python -m unittest discover tests
-```
 
-### Test Coverage Highlights
-- ✅ **Document Processor**: PDF, TXT, DOCX extraction, boundary chunking & overlap logic.
-- ✅ **Vector Store**: FAISS indexing, L2 inner-product search ranking, on-disk persistence.
-- ✅ **RAG Pipeline**: Dynamic prompt compilation, hallucination guarding, Map-Reduce summarization.
-- ✅ **Resilience**: HTTP 429 rate-limit backoff, token-bucket pacing, and registry synchronization.
+# Or run individual domain test suites
+python -m unittest tests/test_ingestion.py
+python -m unittest tests/test_retrieval.py
+python -m unittest tests/test_generation.py
+python -m unittest tests/test_api.py
+```
 
 ---
 
@@ -176,19 +183,48 @@ RAG_Document_Assistant/
 │   │   └── ci.yml               # Automated CI test pipeline
 │   ├── ISSUE_TEMPLATE/          # Structured issue templates
 │   └── PULL_REQUEST_TEMPLATE.md # PR standards checklist
+├── docs/
+│   ├── architecture.md          # Comprehensive architecture & pipeline diagrams
+│   ├── api.md                   # OpenAPI & REST API specification
+│   └── setup.md                 # Local, Docker & cloud setup guide
+├── src/
+│   ├── ingestion/               # Document ingestion, loaders, parsers & chunking
+│   │   ├── loader.py
+│   │   ├── parser.py
+│   │   ├── chunker.py
+│   │   └── manager.py
+│   ├── retrieval/               # Embeddings, FAISS vector store & semantic search
+│   │   ├── embeddings.py
+│   │   ├── vector_store.py
+│   │   └── retriever.py
+│   ├── generation/              # LLM client adapter, prompt compiler & synthesizer
+│   │   ├── llm.py
+│   │   ├── prompt.py
+│   │   └── response.py
+│   ├── api/                     # FastAPI backend & Pydantic schemas
+│   │   ├── routes.py
+│   │   └── schemas.py
+│   ├── config/                  # Settings & environment variables
+│   │   └── settings.py
+│   ├── ui/                      # Streamlit session & state manager
+│   │   └── chat_manager.py
+│   └── utils/                   # Structured logging & text helpers
+│       ├── logger.py
+│       └── helpers.py
+├── data/
+│   ├── raw/                     # Raw input documents
+│   ├── processed/               # Intermediate artifacts
+│   ├── samples/                 # Sample demonstration documents
+│   └── vectorstore/             # Persisted FAISS vector indices & registries
+├── scripts/
+│   ├── ingest.py                # Batch CLI document ingest script
+│   └── rebuild_index.py         # Index reset & rebuild CLI utility
 ├── tests/
-│   ├── __init__.py
-│   └── test_rag_pipeline.py     # Comprehensive unit/integration test suite
-├── vector_db/                   # Persisted FAISS vector indices & registries
-├── app.py                       # Streamlit UI & interaction orchestrator
-├── chat_manager.py              # Session-state chat history manager
-├── config.py                    # Centralized hyperparameter configuration
-├── document_manager.py          # Validation, deduplication & registry sync
-├── document_processor.py        # Text extraction, cleaning & chunking
-├── embeddings.py                # Sentence-Transformer cached vectorizer
-├── llm_service.py               # Isolated LLM adapter with retry logic
-├── rag_engine.py                # Core RAG retrieval, prompt & summarizer
-├── utils.py                     # Hashing, formatting & normalization tools
+│   ├── test_ingestion.py        # Loader, parser & chunking tests
+│   ├── test_retrieval.py        # Embeddings & FAISS store tests
+│   ├── test_generation.py       # Prompt & LLM synthesis tests
+│   └── test_api.py              # FastAPI endpoint integration tests
+├── app.py                       # Streamlit UI web workspace entrypoint
 ├── .env.example                 # Environment configuration template
 ├── .gitignore                   # Git ignore policies
 ├── .dockerignore                # Container build context exclusions
@@ -196,7 +232,6 @@ RAG_Document_Assistant/
 ├── pyproject.toml               # Modern Python packaging configuration
 ├── requirements.txt             # Direct dependencies
 ├── CONTRIBUTING.md              # Open-source contribution guidelines
-
 ├── CODE_OF_CONDUCT.md           # Community code of conduct
 ├── SECURITY.md                  # Vulnerability reporting protocol
 └── LICENSE                      # MIT Open Source License

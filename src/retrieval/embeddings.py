@@ -1,17 +1,30 @@
 """Embedding generation service using Sentence Transformers."""
 
-from typing import List
+from typing import List, Optional
 import numpy as np
-import streamlit as st
 from sentence_transformers import SentenceTransformer
 
-from config import EMBEDDING_MODEL
+from src.config.settings import EMBEDDING_MODEL
+
+_cached_embedding_model: Optional[SentenceTransformer] = None
 
 
-@st.cache_resource(show_spinner=False)
 def load_embedding_model() -> SentenceTransformer:
     """Load and cache the SentenceTransformer model in memory."""
-    return SentenceTransformer(EMBEDDING_MODEL)
+    global _cached_embedding_model
+    try:
+        import streamlit as st
+        if hasattr(st, "runtime") and st.runtime.exists():
+            @st.cache_resource(show_spinner=False)
+            def _st_model():
+                return SentenceTransformer(EMBEDDING_MODEL)
+            return _st_model()
+    except Exception:
+        pass
+
+    if _cached_embedding_model is None:
+        _cached_embedding_model = SentenceTransformer(EMBEDDING_MODEL)
+    return _cached_embedding_model
 
 
 def generate_embeddings(chunks: List[dict]) -> np.ndarray:
@@ -37,4 +50,3 @@ def generate_query_embedding(query: str) -> np.ndarray:
         normalize_embeddings=True,
     )
     return vector.astype("float32")
-

@@ -1,4 +1,4 @@
-"""Utility functions for hashing, text sanitization, and formatting."""
+"""Helper functions for hashing, text sanitization, and formatting."""
 
 import hashlib
 import re
@@ -36,4 +36,3 @@ def truncate_text(text: str, max_chars: int = 220) -> str:
     if len(text) <= max_chars:
         return text
     return text[:max_chars].rsplit(" ", 1)[0] + "..."
-

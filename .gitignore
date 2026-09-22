@@ -29,8 +29,15 @@ htmlcov/
 .streamlit/
 
 # Persistent data & Vector indices (preserve directory structure via .gitkeep)
-vector_db/*
-!vector_db/.gitkeep
+data/vectorstore/*
+!data/vectorstore/.gitkeep
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/samples/*
+!data/samples/.gitkeep
+
 
 
 # IDEs & OS artifacts

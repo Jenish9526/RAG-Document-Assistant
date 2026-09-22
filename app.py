@@ -1,13 +1,12 @@
 """Streamlit user interface for RAG Document Assistant."""
 
-
 import streamlit as st
 
-from config import APP_TITLE, APP_SUBTITLE, TOP_K
-import document_manager as dm
-import chat_manager as cm
-import rag_engine
-import llm_service
+from src.config.settings import APP_TITLE, APP_SUBTITLE, TOP_K
+import src.ingestion.manager as dm
+import src.ui.chat_manager as cm
+import src.generation.response as rag_engine
+import src.generation.llm as llm_service
 
 
 # =======================================================================
@@ -64,7 +63,7 @@ with st.sidebar:
 
                 if result["success"]:
                     status.update(label=f"✅ {uploaded.name} ready", state="complete")
-                    st.session_state.suggested_questions = []  # reset, regenerate on demand
+                    st.session_state.suggested_questions = []
                 elif result["duplicate"]:
                     status.update(label=f"⚠️ {result['message']}", state="complete")
                 else:

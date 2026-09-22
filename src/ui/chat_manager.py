@@ -20,10 +20,9 @@ def add_message(role: str, content: str, sources=None):
 
 def get_history():
     """Retrieve full chat history from session state."""
-    return st.session_state.chat_history
+    return st.session_state.get("chat_history", [])
 
 
 def clear_history():
     """Clear chat message history from session state."""
     st.session_state.chat_history = []
-

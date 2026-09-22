@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple
 import faiss
 import numpy as np
 
-from config import (
+from src.config.settings import (
     FAISS_INDEX_PATH,
     METADATA_PATH,
     EMBEDDING_DIMENSION,
@@ -16,15 +16,21 @@ from config import (
 class VectorStore:
     """FAISS IndexFlatIP vector store managing embeddings and associated metadata."""
 
-    def __init__(self, index_path: str = FAISS_INDEX_PATH, metadata_path: str = METADATA_PATH):
+    def __init__(
+        self,
+        index_path: str = FAISS_INDEX_PATH,
+        metadata_path: str = METADATA_PATH,
+        dimension: int = EMBEDDING_DIMENSION,
+    ):
         self.index_path = index_path
         self.metadata_path = metadata_path
-        self.index: faiss.Index = faiss.IndexFlatIP(EMBEDDING_DIMENSION)
+        self.dimension = dimension
+        self.index: faiss.Index = faiss.IndexFlatIP(self.dimension)
         self.metadata: List[Dict] = []
 
     def create_index(self):
         """Reset the FAISS index and clear metadata in memory."""
-        self.index = faiss.IndexFlatIP(EMBEDDING_DIMENSION)
+        self.index = faiss.IndexFlatIP(self.dimension)
         self.metadata = []
 
     def add_documents(self, chunks: List[Dict], embeddings: np.ndarray):
@@ -51,6 +57,8 @@ class VectorStore:
 
     def save_index(self):
         """Persist FAISS index and metadata to disk."""
+        os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
+        os.makedirs(os.path.dirname(self.metadata_path), exist_ok=True)
         faiss.write_index(self.index, self.index_path)
         with open(self.metadata_path, "wb") as f:
             pickle.dump(self.metadata, f)
@@ -58,10 +66,13 @@ class VectorStore:
     def load_index(self) -> bool:
         """Load FAISS index and metadata from disk if present."""
         if os.path.exists(self.index_path) and os.path.exists(self.metadata_path):
-            self.index = faiss.read_index(self.index_path)
-            with open(self.metadata_path, "rb") as f:
-                self.metadata = pickle.load(f)
-            return True
+            try:
+                self.index = faiss.read_index(self.index_path)
+                with open(self.metadata_path, "rb") as f:
+                    self.metadata = pickle.load(f)
+                return True
+            except Exception:
+                pass
         self.create_index()
         return False
 
@@ -70,7 +81,10 @@ class VectorStore:
         self.create_index()
         for path in (self.index_path, self.metadata_path):
             if os.path.exists(path):
-                os.remove(path)
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
 
     @property
     def total_chunks(self) -> int:
@@ -79,5 +93,4 @@ class VectorStore:
 
     def chunks_for_document(self, document_name: str) -> List[Dict]:
         """Return all metadata chunks for a specific document."""
-        return [m for m in self.metadata if m["document"] == document_name]
-
+        return [m for m in self.metadata if m.get("document") == document_name]

@@ -6,7 +6,12 @@ import time
 import requests
 from dotenv import load_dotenv
 
-from config import LLM_BASE_URL_DEFAULT, LLM_MODEL_DEFAULT, LLM_MAX_TOKENS, LLM_TEMPERATURE
+from src.config.settings import (
+    LLM_BASE_URL_DEFAULT,
+    LLM_MODEL_DEFAULT,
+    LLM_MAX_TOKENS,
+    LLM_TEMPERATURE,
+)
 
 load_dotenv()
 
@@ -99,5 +104,3 @@ def is_configured() -> bool:
     """Return True if an LLM API key is present in configuration."""
     api_key, _, _ = get_llm_config()
     return bool(api_key)
-
-

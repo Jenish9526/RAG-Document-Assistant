@@ -1,74 +1,18 @@
-"""RAG execution engine handling semantic retrieval, prompt assembly, and answer synthesis."""
+"""Response synthesis module for question answering, summarization, and suggested queries."""
 
 import time
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
-from config import TOP_K, SIMILARITY_THRESHOLD
-from embeddings import generate_query_embedding
-from vector_store import VectorStore
-import llm_service
-
-
-def retrieve_relevant_chunks(
-    query: str, store: VectorStore, top_k: int = TOP_K
-) -> List[Tuple[Dict, float]]:
-    """Retrieve chunks scoring above SIMILARITY_THRESHOLD for a user query."""
-    query_vector = generate_query_embedding(query)
-    raw_results = store.search(query_vector, top_k=top_k)
-    return [(chunk, score) for chunk, score in raw_results if score >= SIMILARITY_THRESHOLD]
-
-
-def build_context(retrieved: List[Tuple[Dict, float]]) -> str:
-    """Format retrieved document chunks into labeled context blocks."""
-    blocks = []
-    for i, (chunk, _score) in enumerate(retrieved, start=1):
-        blocks.append(
-            f"[Source {i}: {chunk['document']}, Page {chunk['page']}]\n{chunk['text']}"
-        )
-    return "\n\n".join(blocks)
-
-
-def build_prompt(query: str, context: str, answer_style: str = "Simple", exam_mode: bool = False) -> str:
-    """Assemble the system instructions, context, and user question into an LLM prompt."""
-    style_instruction = (
-        "Use easy language, short paragraphs, and bullet points where useful. "
-        "Avoid unnecessary technical jargon."
-        if answer_style == "Simple" else
-        "Provide a more thorough explanation, including relevant technical details "
-        "and examples if present in the context."
-    )
-
-
-    exam_instruction = ""
-    if exam_mode:
-        exam_instruction = (
-            "\nStructure the answer using ONLY the sections that are relevant to the "
-            "question, chosen from: Definition, Explanation, Steps, Example, "
-            "Advantages, Disadvantages, Complexity.\n"
-        )
-
-    return f"""You are a document assistant. Answer the user's question using ONLY the provided document context below.
-
-Rules:
-1. Prefer information from the provided context above your own general knowledge.
-2. Do not invent facts that are not supported by the context.
-3. If the answer is not present in the context, clearly say: "I couldn't find enough information about this topic in the uploaded documents."
-4. {style_instruction}
-5. Do not claim information comes from the documents if it does not appear in the context.
-{exam_instruction}
-Document Context:
----
-{context}
----
-
-Question: {query}
-
-Answer:"""
+from src.config.settings import TOP_K
+from src.retrieval.retriever import retrieve_relevant_chunks
+from src.retrieval.vector_store import VectorStore
+from src.generation.prompt import build_context, build_prompt
+from src.generation.llm import generate_response, LLMNotConfiguredError, is_configured
 
 
 def generate_answer(prompt: str) -> str:
     """Invoke LLM service to produce an answer for the given prompt."""
-    return llm_service.generate_response(prompt)
+    return generate_response(prompt)
 
 
 def answer_question(
@@ -109,7 +53,7 @@ def answer_question(
 
     try:
         answer_text = generate_answer(prompt)
-    except llm_service.LLMNotConfiguredError as exc:
+    except LLMNotConfiguredError as exc:
         return {"answer": str(exc), "sources": [], "chunks": [], "found_context": False}
     except RuntimeError as exc:
         return {"answer": f"Something went wrong while generating the answer: {exc}",
@@ -128,7 +72,9 @@ def answer_question(
     }
 
 
-def summarize_document(document_name: str, store: VectorStore, max_chunks_per_batch: int = 6) -> str:
+def summarize_document(
+    document_name: str, store: VectorStore, max_chunks_per_batch: int = 6
+) -> str:
     """Generate structured summary of a document using chunk-based map-reduce aggregation."""
     chunks = store.chunks_for_document(document_name)
     if not chunks:
@@ -149,7 +95,7 @@ def summarize_document(document_name: str, store: VectorStore, max_chunks_per_ba
         )
         try:
             partial_summaries.append(generate_answer(batch_prompt))
-        except (llm_service.LLMNotConfiguredError, RuntimeError) as exc:
+        except (LLMNotConfiguredError, RuntimeError) as exc:
             return f"Could not generate summary: {exc}"
 
     combined = "\n\n".join(partial_summaries)
@@ -168,7 +114,7 @@ Partial summaries:
 Final Summary:"""
     try:
         return generate_answer(final_prompt)
-    except (llm_service.LLMNotConfiguredError, RuntimeError) as exc:
+    except (LLMNotConfiguredError, RuntimeError) as exc:
         return f"Could not generate final summary: {exc}"
 
 
@@ -183,7 +129,7 @@ def generate_suggested_questions(document_name: str, store: VectorStore) -> List
     ]
 
     chunks = store.chunks_for_document(document_name)
-    if not chunks or not llm_service.is_configured():
+    if not chunks or not is_configured():
         return fallback
 
     sample_text = "\n\n".join(c["text"] for c in chunks[:4])
@@ -198,6 +144,5 @@ def generate_suggested_questions(document_name: str, store: VectorStore) -> List
         questions = [q.strip("-•0123456789. ").strip() for q in raw.split("\n") if q.strip()]
         questions = [q for q in questions if q]
         return questions[:5] if questions else fallback
-    except (llm_service.LLMNotConfiguredError, RuntimeError):
+    except (LLMNotConfiguredError, RuntimeError):
         return fallback
-

@@ -22,9 +22,10 @@ htmlcov/
 tests/
 
 # Data and Vector Store
-vector_db/
-data/documents/
-data/processed/
+data/vectorstore/*
+data/raw/*
+data/processed/*
+
 
 # IDE files
 .vscode/
