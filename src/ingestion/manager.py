@@ -157,7 +157,7 @@ def add_document(filename: str, file_bytes: bytes, store: Optional[VectorStore] 
     file_hash = compute_file_hash(file_bytes)
     registry = get_document_registry()
 
-    if file_hash in registry:
+    if file_hash in registry or (store and store.chunks_for_document(filename)):
         return {
             "success": False,
             "message": f"'{filename}' has already been added.",

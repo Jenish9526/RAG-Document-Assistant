@@ -73,23 +73,45 @@ def answer_question(
 
 
 def summarize_document(
-    document_name: str, store: VectorStore, max_chunks_per_batch: int = 6
+    document_name: str, store: VectorStore, max_chunks_per_batch: int = 24
 ) -> str:
-    """Generate structured summary of a document using chunk-based map-reduce aggregation."""
+    """Generate structured summary of a document using adaptive single-pass or map-reduce aggregation."""
     chunks = store.chunks_for_document(document_name)
     if not chunks:
         return "No content found for this document."
 
     chunks = sorted(chunks, key=lambda c: (c["page"], c["chunk_id"]))
 
+    # For standard documents, summarize in a single prompt to preserve context and avoid rate-limiting
+    if len(chunks) <= max_chunks_per_batch:
+        full_text = "\n\n".join(c["text"] for c in chunks)
+        prompt = f"""Based on the following content from "{document_name}", provide a comprehensive, well-structured summary formatted with these sections:
+
+1. Main Topic
+2. Important Concepts
+3. Key Points
+4. Important Definitions & Practical Takeaways
+
+Document Content:
+---
+{full_text}
+---
+
+Structured Summary:"""
+        try:
+            return generate_answer(prompt)
+        except (LLMNotConfiguredError, RuntimeError) as exc:
+            return f"Could not generate summary: {exc}"
+
+    # For very large documents, aggregate across larger chunks with a safe pacing delay
     partial_summaries = []
     for i in range(0, len(chunks), max_chunks_per_batch):
         if i > 0:
-            time.sleep(1.5)
+            time.sleep(3.0)
         batch = chunks[i:i + max_chunks_per_batch]
         batch_text = "\n\n".join(c["text"] for c in batch)
         batch_prompt = (
-            "Summarize the following document excerpt in 3-5 concise sentences, "
+            "Summarize the following document excerpt in concise points, "
             "focusing on the main ideas and any important definitions:\n\n"
             f"{batch_text}\n\nSummary:"
         )
@@ -98,6 +120,7 @@ def summarize_document(
         except (LLMNotConfiguredError, RuntimeError) as exc:
             return f"Could not generate summary: {exc}"
 
+    time.sleep(2.0)
     combined = "\n\n".join(partial_summaries)
     final_prompt = f"""Based on the following partial summaries of a document called "{document_name}", write one combined, well-structured summary with these sections:
 
