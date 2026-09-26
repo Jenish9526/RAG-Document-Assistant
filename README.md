@@ -114,7 +114,7 @@ uvicorn src.api.routes:app --reload
 
 ---
 
-## 🛠️ CLI Utilities & Testing
+## 🛠️ CLI Utilities
 
 * **Batch Ingest Documents from `data/raw/`**:
   ```powershell
@@ -124,11 +124,6 @@ uvicorn src.api.routes:app --reload
 * **Reset / Rebuild Vector Store**:
   ```powershell
   python scripts/rebuild_index.py --reingest
-  ```
-
-* **Run Unit Tests**:
-  ```powershell
-  python -m unittest discover tests
   ```
 
 ---
@@ -148,7 +143,6 @@ RAG_Document_Assistant/
 │   ├── raw/             # Raw input documents
 │   └── vectorstore/     # Persisted FAISS index & metadata files
 ├── scripts/             # CLI utilities for ingestion & index rebuilding
-├── tests/               # Unit and integration test suite
 ├── app.py               # Streamlit web application
 ├── requirements.txt     # Python package dependencies
 ├── .env.example         # Example configuration file
