@@ -67,7 +67,12 @@ st.markdown(
 
     /* Sidebar refinement */
     [data-testid="stSidebar"] {
-        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        background-color: #0e1117 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 0.75rem !important;
     }
 
     /* Professional buttons */
@@ -77,39 +82,157 @@ st.markdown(
         font-size: 0.88rem;
         transition: all 0.15s ease-in-out;
         border: 1px solid rgba(255, 255, 255, 0.12);
+        background-color: rgba(255, 255, 255, 0.03);
     }
     .stButton > button:hover {
         border-color: #10a37f;
         color: #10a37f;
+        background-color: rgba(16, 163, 127, 0.08);
     }
 
     /* New Chat Button */
     .new-chat-btn button {
-        background-color: transparent !important;
-        border: 1px solid rgba(255, 255, 255, 0.18) !important;
-        color: #ececf1 !important;
-        padding: 0.5rem 0.85rem !important;
+        background: linear-gradient(135deg, rgba(16, 163, 127, 0.15), rgba(16, 163, 127, 0.05)) !important;
+        border: 1px solid rgba(16, 163, 127, 0.35) !important;
+        color: #e2e8f0 !important;
+        padding: 0.55rem 0.95rem !important;
         display: flex !important;
         align-items: center !important;
-        justify-content: flex-start !important;
-        gap: 8px !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 8px rgba(16, 163, 127, 0.12) !important;
     }
     .new-chat-btn button:hover {
-        background-color: rgba(255, 255, 255, 0.06) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
+        background: linear-gradient(135deg, rgba(16, 163, 127, 0.25), rgba(16, 163, 127, 0.1)) !important;
+        border-color: #10a37f !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 14px rgba(16, 163, 127, 0.25) !important;
     }
 
-    /* Document card styling */
-    .doc-pill {
+    /* System Metric Pill */
+    .system-metric-pill {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 8px 12px;
+        padding: 7px 11px;
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 6px;
-        margin-bottom: 6px;
-        font-size: 0.82rem;
+        border-radius: 8px;
+        font-size: 0.74rem;
+        margin-bottom: 4px;
+    }
+    .pulse-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background-color: #10a37f;
+        box-shadow: 0 0 8px #10a37f;
+        display: inline-block;
+        margin-right: 6px;
+        animation: pulseDotAnim 2s infinite;
+    }
+    @keyframes pulseDotAnim {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 163, 127, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 163, 127, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 163, 127, 0); }
+    }
+
+    /* Section Headers */
+    .sidebar-section-header {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.9px;
+        color: #8e8ea0;
+        font-weight: 700;
+        margin: 12px 0 4px 2px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* NotebookLM-Style Document Cards */
+    .notebooklm-doc-card {
+        padding: 8px 11px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 8px;
+        margin-bottom: 5px;
+        transition: all 0.15s ease;
+    }
+    .notebooklm-doc-card:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+    .doc-card-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .doc-badge {
+        font-size: 0.62rem;
+        font-weight: 700;
+        padding: 2px 5px;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+    }
+    .doc-badge-pdf {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .doc-badge-docx {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .doc-badge-txt {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .doc-card-title {
+        font-size: 0.81rem;
+        font-weight: 500;
+        color: #e2e8f0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-grow: 1;
+    }
+    .doc-card-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.70rem;
+        color: #64748b;
+        margin-top: 4px;
+        padding-left: 28px;
+    }
+    .doc-indexed-tag {
+        color: #10a37f;
+        font-size: 0.68rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    /* File Uploader Container Polish */
+    [data-testid="stFileUploader"] {
+        padding: 0 !important;
+    }
+    [data-testid="stFileUploader"] section {
+        padding: 8px 10px !important;
+        border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+        border-radius: 8px !important;
+        background: rgba(255, 255, 255, 0.015) !important;
+    }
+    [data-testid="stFileUploader"] section:hover {
+        border-color: rgba(16, 163, 127, 0.5) !important;
+        background: rgba(16, 163, 127, 0.02) !important;
     }
 
     /* Chat bubble container */
@@ -355,45 +478,64 @@ st.markdown(
 )
 
 # =======================================================================
-# SIDEBAR
+# SIDEBAR (Enterprise NotebookLM & Claude Style)
 # =======================================================================
 with st.sidebar:
-    # Sleek Brand Header
+    # 1. Sleek Brand Header
     st.markdown(
         """
-        <div style="display:flex; align-items:center; gap:11px; margin: 4px 0 16px 0;">
-            <div style="background: linear-gradient(135deg, #10a37f, #0c8a6b); width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 12px rgba(16, 163, 127, 0.25);">
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <div style="display:flex; align-items:center; gap:10px; margin: 2px 0 12px 0;">
+            <div style="background: linear-gradient(135deg, #10a37f, #059669); width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 14px rgba(16, 163, 127, 0.35); flex-shrink: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/>
                 </svg>
             </div>
             <div>
-                <div style="font-weight:600; font-size:1.02rem; letter-spacing:-0.2px; line-height: 1.2;">Assistant</div>
-                <div style="font-size:0.75rem; color:#8e8ea0; font-weight:400;">RAG Document Intelligence</div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-weight:700; font-size:1.02rem; letter-spacing:-0.3px; color:#f1f5f9;">Assistant</span>
+                    <span style="font-size:0.62rem; font-weight:700; background:rgba(16, 163, 127, 0.18); color:#34d399; border:1px solid rgba(16, 163, 127, 0.35); padding:1px 6px; border-radius:10px; letter-spacing:0.5px;">RAG</span>
+                </div>
+                <div style="font-size:0.72rem; color:#8e8ea0;">Enterprise Knowledge Assistant</div>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # New Chat Button
+    # 2. Primary New Chat Button
     st.markdown('<div class="new-chat-btn">', unsafe_allow_html=True)
-    if st.button("＋ New chat", use_container_width=True):
+    if st.button("＋ New Conversation", use_container_width=True):
         cm.clear_history()
         st.session_state.suggested_questions = []
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    st.write("")
+    # 3. Live System & Model Metric Pills
+    _, _, configured_model = llm_service.get_llm_config()
+    st.markdown(
+        f"""
+        <div class="system-metric-pill">
+            <div style="display:flex; align-items:center;">
+                <span class="pulse-dot"></span>
+                <span style="color:#d1d5db; font-weight:500;">FAISS Vector Store</span>
+            </div>
+            <span style="color:#10a37f; font-weight:600;">{store.total_chunks} Chunks</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     if not llm_service.is_configured():
-        st.warning("LLM API key not configured. Set LLM_API_KEY in your .env file.")
+        st.warning("⚠️ LLM_API_KEY is not set in `.env`.")
 
-    # ---------------- DOCUMENT UPLOAD ----------------
+    # 4. Knowledge Sources & File Ingestion
+    registry = dm.get_document_registry()
+    doc_count = len(registry)
     st.markdown(
-        """
-        <div style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.8px; color:#8e8ea0; font-weight:600; margin-bottom: 8px;">
-            Files
+        f"""
+        <div class="sidebar-section-header">
+            <span>Knowledge Sources</span>
+            <span style="color:#10a37f; font-size:0.70rem;">{doc_count} Indexed</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -413,14 +555,14 @@ with st.sidebar:
                 continue
 
             with st.status(f"Indexing {uploaded.name}...", expanded=False) as status:
-                st.write("Extracting content")
+                st.write("Extracting content pages")
                 file_bytes = uploaded.getvalue()
-                st.write("Generating vector embeddings")
+                st.write("Generating dense embeddings (384-d)")
                 result = dm.add_document(uploaded.name, file_bytes)
-                st.write("Updating FAISS index")
+                st.write("Updating FAISS vector index")
 
                 if result["success"]:
-                    status.update(label=f"{uploaded.name} indexed", state="complete")
+                    status.update(label=f"✓ {uploaded.name} indexed", state="complete")
                     st.session_state.suggested_questions = []
                 elif result["duplicate"]:
                     status.update(label=f"{result['message']}", state="complete")
@@ -429,33 +571,43 @@ with st.sidebar:
 
             st.session_state[already_done_key] = True
 
-    # ---------------- DOCUMENT LIST ----------------
-    registry = dm.get_document_registry()
+    # 5. NotebookLM-Style Document Cards
     if registry:
-        st.markdown(
-            f"""
-            <div style="font-size:0.75rem; color:#8e8ea0; margin: 12px 0 6px 0; font-weight:500;">
-                Indexed Documents ({len(registry)})
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
         for info in registry.values():
-            with st.expander(info["filename"]):
-                st.caption(
-                    f"Pages: {info['pages']}  •  Chunks: {info['chunks']}  •  Size: {info['size']}"
-                )
-    else:
-        st.caption("No files uploaded yet. Add a PDF, TXT, or DOCX above.")
+            fname = info["filename"]
+            ext = fname.rsplit(".", 1)[-1].upper() if "." in fname else "DOC"
+            badge_class = "doc-badge-pdf" if ext == "PDF" else ("doc-badge-docx" if ext in ("DOC", "DOCX") else "doc-badge-txt")
 
-    # ---------------- DOCUMENT ACTIONS ----------------
+            st.markdown(
+                f"""
+                <div class="notebooklm-doc-card">
+                    <div class="doc-card-top">
+                        <span class="doc-badge {badge_class}">{ext}</span>
+                        <span class="doc-card-title" title="{html.escape(fname)}">{html.escape(fname)}</span>
+                    </div>
+                    <div class="doc-card-meta">
+                        <span>{info['pages']} pgs &bull; {info['chunks']} chunks &bull; {info['size']}</span>
+                        <span class="doc-indexed-tag">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10a37f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Active
+                        </span>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+    else:
+        st.caption("📁 No documents uploaded yet. Drop a PDF, TXT, or DOCX above to index.")
+
+    # 6. Knowledge Actions (NotebookLM-Style Quick Actions)
     doc_names = dm.list_document_names()
     if doc_names:
-        st.write("")
         st.markdown(
             """
-            <div style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.8px; color:#8e8ea0; font-weight:600; margin-bottom: 6px;">
-                Actions
+            <div class="sidebar-section-header">
+                <span>Knowledge Actions</span>
             </div>
             """,
             unsafe_allow_html=True,
@@ -469,20 +621,38 @@ with st.sidebar:
 
         col_a, col_b = st.columns(2)
         with col_a:
-            if st.button("Summarize", use_container_width=True):
-                with st.spinner(f"Summarizing {selected_doc}..."):
+            if st.button("📋 Summarize", use_container_width=True):
+                with st.spinner(f"Synthesizing {selected_doc}..."):
                     summary = rag_engine.summarize_document(selected_doc, store)
-                cm.add_message("assistant", f"**Executive Summary of {selected_doc}:**\n\n{summary}")
+                cm.add_message("assistant", f"**Executive Summary of `{selected_doc}`:**\n\n{summary}")
                 st.rerun()
         with col_b:
-            if st.button("Questions", use_container_width=True):
-                with st.spinner("Generating questions..."):
+            if st.button("💡 Questions", use_container_width=True):
+                with st.spinner("Generating study queries..."):
                     st.session_state.suggested_questions = rag_engine.generate_suggested_questions(
                         selected_doc, store
                     )
                 st.rerun()
 
-    # ---------------- FOOTER & RESET ----------------
+    # 7. Preferences & Generation Mode (Collapsible)
+    with st.expander("⚙️ Response Settings"):
+        style_choice = st.selectbox(
+            "Answer Depth",
+            ["Detailed", "Simple", "Academic"],
+            index=["Detailed", "Simple", "Academic"].index(st.session_state.get("answer_style", "Detailed")),
+            key="pref_style_choice",
+        )
+        st.session_state["answer_style"] = style_choice
+
+        exam_toggle = st.checkbox(
+            "Exam Prep Mode",
+            value=st.session_state.get("exam_mode", False),
+            key="pref_exam_toggle",
+            help="Structures answers with formulas, definitions, key takeaways, and practice test questions.",
+        )
+        st.session_state["exam_mode"] = exam_toggle
+
+    # 8. Bottom Danger Zone & Reset Utilities
     st.divider()
     col_clear1, col_clear2 = st.columns(2)
     with col_clear1:
@@ -490,7 +660,7 @@ with st.sidebar:
             cm.clear_history()
             st.rerun()
     with col_clear2:
-        if st.button("Reset Store", use_container_width=True):
+        if st.button("Reset Index", use_container_width=True):
             dm.clear_all_documents()
             st.session_state.suggested_questions = []
             for key in list(st.session_state.keys()):
@@ -700,7 +870,9 @@ if active_query:
                     )
 
                     context = build_context(retrieved)
-                    prompt = build_prompt(query_str, context, answer_style="Detailed", exam_mode=False)
+                    active_style = st.session_state.get("answer_style", "Detailed")
+                    active_exam = st.session_state.get("exam_mode", False)
+                    prompt = build_prompt(query_str, context, answer_style=active_style, exam_mode=active_exam)
 
                     try:
                         answer_text = rag_engine.generate_answer(prompt)
