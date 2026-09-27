@@ -14,16 +14,26 @@ def build_context(retrieved: List[Tuple[Dict, float]]) -> str:
 
 
 def build_prompt(
-    query: str, context: str, answer_style: str = "Simple", exam_mode: bool = False
+    query: str, context: str, answer_style: str = "Medium", exam_mode: bool = False
 ) -> str:
     """Assemble the system instructions, context, and user question into an LLM prompt."""
-    style_instruction = (
-        "Use easy language, short paragraphs, and bullet points where useful. "
-        "Avoid unnecessary technical jargon."
-        if answer_style == "Simple" else
-        "Provide a more thorough explanation, including relevant technical details "
-        "and examples if present in the context."
-    )
+    normalized_style = str(answer_style).capitalize()
+    if normalized_style in ("Low", "Simple"):
+        style_instruction = (
+            "Effort Level: LOW. Provide a concise, direct, and brief response focusing strictly on "
+            "the core answer and key points. Keep sentences straightforward and avoid unnecessary elaboration."
+        )
+    elif normalized_style in ("High", "Detailed", "Academic"):
+        style_instruction = (
+            "Effort Level: HIGH. Provide an exhaustive, deeply comprehensive explanation. Include thorough "
+            "technical context, nuance, in-depth breakdowns, underlying mechanics, and step-by-step reasoning "
+            "as supported by the context."
+        )
+    else:  # Medium / default
+        style_instruction = (
+            "Effort Level: MEDIUM. Provide a balanced, clear, and well-structured answer with standard explanations, "
+            "helpful context, and bullet points where useful."
+        )
 
     exam_instruction = ""
     if exam_mode:
