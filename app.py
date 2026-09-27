@@ -5,15 +5,20 @@ import html
 import streamlit as st
 
 from src.config.settings import APP_TITLE, TOP_K
+import importlib
 import src.ingestion.manager as dm
 import src.ui.chat_manager as cm
+importlib.reload(dm)
+importlib.reload(cm)
 import src.generation.response as rag_engine
 import src.generation.llm as llm_service
+import src.generation.prompt as prompt_module
+importlib.reload(prompt_module)
 from src.retrieval.retriever import retrieve_relevant_chunks
 from src.generation.prompt import build_context, build_prompt
 
 # =======================================================================
-# SVG ASSETS & ICONS (No Emojis)
+# SVG ASSETS & ICONS
 # =======================================================================
 ICON_SPARK_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#10a37f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/></svg>"""
 ICON_USER_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
@@ -31,14 +36,18 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# Session initialization (Session-scoped in-memory data)
 cm.init_chat_history()
 store = dm.get_vector_store()
+
+if "answer_depth" not in st.session_state:
+    st.session_state.answer_depth = "Medium"
 
 if "suggested_questions" not in st.session_state:
     st.session_state.suggested_questions = []
 
 # =======================================================================
-# PROFESSIONAL CUSTOM STYLES (ChatGPT Aesthetics)
+# PROFESSIONAL CUSTOM STYLES (Exact ChatGPT Aesthetics)
 # =======================================================================
 st.markdown(
     """
@@ -51,8 +60,8 @@ st.markdown(
 
     /* Clean subtle scrollbars */
     ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+        width: 5px;
+        height: 5px;
     }
     ::-webkit-scrollbar-track {
         background: transparent;
@@ -65,177 +74,377 @@ st.markdown(
         background: rgba(255, 255, 255, 0.22);
     }
 
-    /* Sidebar refinement */
+    /* =======================================================================
+       SIDEBAR: EXACT CHATGPT STYLE (Matching Project Theme #0e1117)
+       ======================================================================= */
     [data-testid="stSidebar"] {
         background-color: #0e1117 !important;
         border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
 
     [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-        gap: 0.75rem !important;
+        gap: 0.15rem !important;
+        padding-top: 0.4rem !important;
     }
 
-    /* Professional buttons */
-    .stButton > button {
-        border-radius: 8px;
-        font-weight: 500;
-        font-size: 0.88rem;
-        transition: all 0.15s ease-in-out;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        background-color: rgba(255, 255, 255, 0.03);
-    }
-    .stButton > button:hover {
-        border-color: #10a37f;
-        color: #10a37f;
-        background-color: rgba(16, 163, 127, 0.08);
-    }
-
-    /* New Chat Button */
-    .new-chat-btn button {
-        background: linear-gradient(135deg, rgba(16, 163, 127, 0.15), rgba(16, 163, 127, 0.05)) !important;
-        border: 1px solid rgba(16, 163, 127, 0.35) !important;
-        color: #e2e8f0 !important;
-        padding: 0.55rem 0.95rem !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        font-weight: 600 !important;
-        font-size: 0.9rem !important;
-        border-radius: 8px !important;
-        box-shadow: 0 2px 8px rgba(16, 163, 127, 0.12) !important;
-    }
-    .new-chat-btn button:hover {
-        background: linear-gradient(135deg, rgba(16, 163, 127, 0.25), rgba(16, 163, 127, 0.1)) !important;
-        border-color: #10a37f !important;
-        color: #ffffff !important;
-        box-shadow: 0 4px 14px rgba(16, 163, 127, 0.25) !important;
-    }
-
-    /* System Metric Pill */
-    .system-metric-pill {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 7px 11px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        font-size: 0.74rem;
-        margin-bottom: 4px;
-    }
-    .pulse-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background-color: #10a37f;
-        box-shadow: 0 0 8px #10a37f;
-        display: inline-block;
-        margin-right: 6px;
-        animation: pulseDotAnim 2s infinite;
-    }
-    @keyframes pulseDotAnim {
-        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 163, 127, 0.7); }
-        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 163, 127, 0); }
-        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 163, 127, 0); }
-    }
-
-    /* Section Headers */
-    .sidebar-section-header {
-        font-size: 0.72rem;
-        text-transform: uppercase;
-        letter-spacing: 0.9px;
-        color: #8e8ea0;
-        font-weight: 700;
-        margin: 12px 0 4px 2px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    /* NotebookLM-Style Document Cards */
-    .notebooklm-doc-card {
-        padding: 8px 11px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        border-radius: 8px;
-        margin-bottom: 5px;
-        transition: all 0.15s ease;
-    }
-    .notebooklm-doc-card:hover {
-        background: rgba(255, 255, 255, 0.06);
-        border-color: rgba(255, 255, 255, 0.15);
-    }
-    .doc-card-top {
+    /* Top Brand Header */
+    .sidebar-brand {
         display: flex;
         align-items: center;
         gap: 8px;
-    }
-    .doc-badge {
-        font-size: 0.62rem;
-        font-weight: 700;
-        padding: 2px 5px;
-        border-radius: 4px;
-        letter-spacing: 0.5px;
-        flex-shrink: 0;
-    }
-    .doc-badge-pdf {
-        background: rgba(239, 68, 68, 0.15);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.3);
-    }
-    .doc-badge-docx {
-        background: rgba(59, 130, 246, 0.15);
-        color: #60a5fa;
-        border: 1px solid rgba(59, 130, 246, 0.3);
-    }
-    .doc-badge-txt {
-        background: rgba(245, 158, 11, 0.15);
-        color: #fbbf24;
-        border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-    .doc-card-title {
-        font-size: 0.81rem;
-        font-weight: 500;
-        color: #e2e8f0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        flex-grow: 1;
-    }
-    .doc-card-meta {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 0.70rem;
-        color: #64748b;
-        margin-top: 4px;
-        padding-left: 28px;
-    }
-    .doc-indexed-tag {
-        color: #10a37f;
-        font-size: 0.68rem;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 3px;
+        padding: 6px 12px 12px 12px;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #ececf1;
+        letter-spacing: -0.2px;
     }
 
-    /* File Uploader Container Polish */
+    /* ALL sidebar buttons default to transparent text rows (No white boxes!) */
+    [data-testid="stSidebar"] button,
+    [data-testid="stSidebar"] button[data-testid*="stBaseButton"] {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        color: #ececf1 !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        padding: 8px 10px !important;
+        font-size: 0.86rem !important;
+        font-weight: 400 !important;
+        border-radius: 8px !important;
+        width: 100% !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        box-shadow: none !important;
+        transition: background-color 0.15s ease !important;
+    }
+
+    [data-testid="stSidebar"] button > div,
+    [data-testid="stSidebar"] button > div > div,
+    [data-testid="stSidebar"] button [data-testid="stMarkdownContainer"],
+    [data-testid="stSidebar"] button p {
+        text-align: left !important;
+        justify-content: flex-start !important;
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    [data-testid="stSidebar"] button span {
+        display: inline-flex !important;
+        width: auto !important;
+    }
+
+    [data-testid="stSidebar"] button:hover,
+    [data-testid="stSidebar"] button[data-testid*="stBaseButton"]:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: #ffffff !important;
+        border: none !important;
+    }
+
+    /* Active Chat highlight in Recents (Subtle dark background #212121) */
+    .chat-row-active button,
+    .chat-row-active button[data-testid*="stBaseButton"] {
+        background: #212121 !important;
+        background-color: #212121 !important;
+        color: #ffffff !important;
+        font-weight: 500 !important;
+        border: none !important;
+    }
+    .chat-row-active button:hover,
+    .chat-row-active button[data-testid*="stBaseButton"]:hover {
+        background: #282828 !important;
+        background-color: #282828 !important;
+        color: #ffffff !important;
+    }
+
+    /* Action buttons: New Chat */
+    .sidebar-action-btn button {
+        font-weight: 500 !important;
+        font-size: 0.88rem !important;
+        padding: 9px 12px !important;
+        margin-bottom: 2px !important;
+    }
+
+    /* Clean Upload Button: Sleek button matching sidebar rows, hide all dropzone instructions */
     [data-testid="stFileUploader"] {
         padding: 0 !important;
+        margin: 2px 0 6px 0 !important;
     }
     [data-testid="stFileUploader"] section {
-        padding: 8px 10px !important;
-        border: 1px dashed rgba(255, 255, 255, 0.15) !important;
-        border-radius: 8px !important;
-        background: rgba(255, 255, 255, 0.015) !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
     }
-    [data-testid="stFileUploader"] section:hover {
-        border-color: rgba(16, 163, 127, 0.5) !important;
-        background: rgba(16, 163, 127, 0.02) !important;
+    [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzoneInstructions"],
+    [data-testid="stFileUploader"] [data-testid="stFileUploaderInstructions"],
+    [data-testid="stFileUploader"] section small,
+    [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] small {
+        display: none !important;
+    }
+    [data-testid="stFileUploader"] section button {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: 100% !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        border-radius: 8px !important;
+        color: #ececf1 !important;
+        font-size: 0.86rem !important;
+        font-weight: 400 !important;
+        padding: 8px 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 8px !important;
+        box-shadow: none !important;
+        transition: background-color 0.15s ease !important;
+    }
+    [data-testid="stFileUploader"] section button:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: #ffffff !important;
+        border: none !important;
+    }
+    [data-testid="stFileUploader"] section button p,
+    [data-testid="stFileUploader"] section button span,
+    [data-testid="stFileUploader"] section button div {
+        font-size: 0.86rem !important;
+        color: #ececf1 !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+    }
+    [data-testid="stFileUploader"] section button svg {
+        fill: #ececf1 !important;
+        color: #ececf1 !important;
+        width: 16px !important;
+        height: 16px !important;
+    }
+    [data-testid="stFileUploader"] section button:hover p,
+    [data-testid="stFileUploader"] section button:hover span,
+    [data-testid="stFileUploader"] section button:hover div {
+        color: #ffffff !important;
+    }
+    [data-testid="stFileUploader"] section button:hover svg {
+        fill: #ffffff !important;
+        color: #ffffff !important;
+    }
+    [data-testid="stFileUploader"] ul {
+        display: none !important;
     }
 
-    /* Chat bubble container */
+    /* Section Headers (e.g. 'Recents', 'Documents') */
+    .sidebar-section-header {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #8e8ea0;
+        padding: 16px 12px 6px 12px;
+        letter-spacing: -0.1px;
+    }
+
+    /* Document Items in Sidebar */
+    [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]) {
+        align-items: center !important;
+        min-height: 32px !important;
+        max-height: 32px !important;
+        margin: 1px 0 !important;
+        padding: 0 !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stPopover"] {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stPopover"] button {
+        width: 100% !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        max-height: 32px !important;
+        line-height: 32px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+        text-align: left !important;
+        direction: ltr !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 8px !important;
+        color: #ececf1 !important;
+        font-size: 0.86rem !important;
+        font-weight: 400 !important;
+        padding: 0 4px !important;
+        box-shadow: none !important;
+        transition: background-color 0.15s ease !important;
+        overflow: hidden !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stPopover"] button:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        color: #ffffff !important;
+    }
+    /* Hide the popover chevron completely so it takes zero space */
+    [data-testid="stSidebar"] [data-testid="stPopover"] button svg,
+    [data-testid="stSidebar"] [data-testid="stPopover"] button [data-testid*="Icon"],
+    [data-testid="stSidebar"] [data-testid="stPopover"] button [data-testid="stIconMaterial"],
+    [data-testid="stSidebar"] [data-testid="stPopover"] button .material-symbols-outlined,
+    [data-testid="stSidebar"] [data-testid="stPopover"] button span:has(svg),
+    [data-testid="stSidebar"] [data-testid="stPopover"] button > div + * {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    /* Text container starts flush at left edge, 1-line height, no ellipsis */
+    [data-testid="stSidebar"] [data-testid="stPopover"] button > div {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        text-align: left !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        height: 32px !important;
+        line-height: 32px !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stPopover"] button [data-testid="stMarkdownContainer"],
+    [data-testid="stSidebar"] [data-testid="stPopover"] button p {
+        display: block !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        direction: ltr !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: clip !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        color: #ececf1 !important;
+        font-size: 0.86rem !important;
+        height: 32px !important;
+        line-height: 32px !important;
+    }
+
+    /* Document Delete Button: Completely hidden by default, square 28px by 28px */
+    [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]) [data-testid="stButton"] {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 32px !important;
+        width: 32px !important;
+    }
+    [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]) [data-testid="stButton"] button {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 6px !important;
+        color: #8e8ea0 !important;
+        width: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
+        aspect-ratio: 1 / 1 !important;
+        line-height: 1 !important;
+        padding: 0 !important;
+        font-size: 0.82rem !important;
+        box-shadow: none !important;
+        text-align: center !important;
+        transition: opacity 0.15s ease, visibility 0.15s ease, color 0.15s ease, background-color 0.15s ease !important;
+    }
+    [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]) [data-testid="stButton"] button div,
+    [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]) [data-testid="stButton"] button p,
+    [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]) [data-testid="stButton"] button span {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+    }
+
+    /* Document Delete Button: Appears ONLY when the document row is hovered over */
+    [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]):hover [data-testid="stButton"] button {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]) [data-testid="stButton"] button:hover {
+        color: #f87171 !important;
+        background: rgba(239, 68, 68, 0.16) !important;
+        border-radius: 6px !important;
+    }
+
+    /* Chat items in sidebar (Recents - Exact ChatGPT look) */
+    .chat-row button {
+        display: block !important;
+        width: 100% !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        background: transparent !important;
+        border: none !important;
+        color: #ececf1 !important;
+        font-size: 0.86rem !important;
+        font-weight: 400 !important;
+        padding: 7px 12px !important;
+        border-radius: 8px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        box-shadow: none !important;
+        transition: background-color 0.15s ease !important;
+    }
+    .chat-row button:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        color: #ffffff !important;
+        border: none !important;
+    }
+    .chat-row-active button {
+        background: #212121 !important;
+        color: #ffffff !important;
+        font-weight: 500 !important;
+        border: none !important;
+    }
+    .chat-row-active button:hover {
+        background: #262626 !important;
+        color: #ffffff !important;
+    }
+
+    .chat-del-btn button {
+        background: transparent !important;
+        border: none !important;
+        color: #64748b !important;
+        padding: 7px 4px !important;
+        font-size: 0.76rem !important;
+        box-shadow: none !important;
+    }
+    .chat-del-btn button:hover {
+        color: #f87171 !important;
+        background: transparent !important;
+    }
+
+    /* =======================================================================
+       CHAT MESSAGES STYLING
+       ======================================================================= */
     [data-testid="stChatMessage"] {
         padding: 0.5rem 0.25rem !important;
         border-bottom: none !important;
@@ -293,24 +502,22 @@ st.markdown(
     }
 
     .user-bubble {
-        background: linear-gradient(135deg, #10a37f 0%, #0d8265 100%) !important;
-        color: #ffffff !important;
+        background: #2f2f2f !important;
+        color: #ececf1 !important;
         padding: 10px 18px !important;
-        border-radius: 18px 18px 4px 18px !important;
+        border-radius: 18px !important;
         display: inline-block !important;
         text-align: left !important;
         white-space: pre-wrap !important;
         word-break: break-word !important;
-        box-shadow: 0 4px 14px rgba(16, 163, 127, 0.25) !important;
         font-size: 0.94rem !important;
         line-height: 1.55 !important;
-        letter-spacing: -0.1px !important;
         max-width: 80% !important;
         margin-left: auto !important;
         margin-right: 0 !important;
     }
 
-    /* Assistant Message: Clean, transparent typography (No giant empty boxes) */
+    /* Assistant Message */
     [data-testid="stChatMessage"]:has(.assistant-chat-marker),
     div[aria-label="Chat message from assistant"] {
         flex-direction: row !important;
@@ -338,7 +545,7 @@ st.markdown(
         color: #ececf1 !important;
     }
 
-    /* Claude-Style Single-Line Expandable Progress Dropdown */
+    /* Expandable thought pill */
     .claude-thought-pill {
         display: inline-block;
         margin: 2px 0 10px 0;
@@ -351,19 +558,16 @@ st.markdown(
         transition: all 0.15s ease-in-out;
         user-select: none;
     }
-
     .claude-thought-pill:hover {
         background: rgba(255, 255, 255, 0.07);
         border-color: rgba(255, 255, 255, 0.16);
         color: #e5e7eb;
     }
-
     .claude-thought-pill[open] {
         background: rgba(20, 24, 30, 0.95);
         border-color: rgba(16, 163, 127, 0.35);
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
     }
-
     .claude-thought-summary {
         display: inline-flex;
         align-items: center;
@@ -376,11 +580,9 @@ st.markdown(
         line-height: 1.2;
         white-space: nowrap;
     }
-
     .claude-thought-summary::-webkit-details-marker {
         display: none;
     }
-
     .claude-spinner-inline {
         width: 12px;
         height: 12px;
@@ -390,31 +592,25 @@ st.markdown(
         animation: claudeSpin 0.75s linear infinite;
         flex-shrink: 0;
     }
-
     @keyframes claudeSpin {
         to { transform: rotate(360deg); }
     }
-
     .claude-check-inline {
         flex-shrink: 0;
     }
-
     .claude-summary-label {
         color: #d1d5db;
         letter-spacing: -0.1px;
     }
-
     .claude-chevron {
         transition: transform 0.2s ease;
         opacity: 0.6;
         margin-left: 3px;
         flex-shrink: 0;
     }
-
     .claude-thought-pill[open] .claude-chevron {
         transform: rotate(180deg);
     }
-
     .claude-thought-content {
         padding: 8px 14px 10px 14px;
         border-top: 1px solid rgba(255, 255, 255, 0.07);
@@ -423,29 +619,24 @@ st.markdown(
         line-height: 1.6;
         background: rgba(0, 0, 0, 0.2);
     }
-
     .claude-step-row {
         display: flex;
         align-items: center;
         gap: 8px;
         padding: 2px 0;
     }
-
     .claude-step-row.done .step-icon {
         color: #10a37f;
         font-weight: bold;
     }
-
     .claude-step-row.active {
         color: #f1f5f9;
         font-weight: 500;
     }
-
     .claude-step-row.active .step-icon {
         color: #38bdf8;
     }
 
-    /* Citation expander styling */
     [data-testid="stExpander"] {
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
         border-radius: 8px !important;
@@ -453,19 +644,311 @@ st.markdown(
         margin-top: 0.75rem !important;
     }
 
-    /* Suggested query pills */
-    .suggestion-card {
-        padding: 14px 18px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.18s ease;
-        margin-bottom: 8px;
+    /* =======================================================================
+       QUESTION TEXT BOX AREA (Exact ChatGPT Style)
+       ======================================================================= */
+    [data-testid="stBottom"] {
+        background: transparent !important;
+        padding-bottom: 8px !important;
+        padding-top: 0 !important;
     }
-    .suggestion-card:hover {
-        background: rgba(255, 255, 255, 0.06);
-        border-color: rgba(255, 255, 255, 0.18);
+
+    [data-testid="stBottom"] [data-testid="stBottomBlockContainer"],
+    [data-testid="stBottom"] > div,
+    [data-testid="stBottom"] > div > div {
+        position: relative !important;
+        max-width: 800px !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        gap: 0 !important;
+    }
+
+    [data-testid="stBottom"] [data-testid="stElementContainer"] {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Single sleek ChatGPT capsule */
+    [data-testid="stChatInput"] {
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    [data-testid="stChatInput"] > div {
+        position: relative !important;
+        background: #212121 !important;
+        background-color: #212121 !important;
+        border: 1px solid rgba(255, 255, 255, 0.14) !important;
+        border-radius: 26px !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        max-height: 48px !important;
+        box-sizing: border-box !important;
+        padding: 0 16px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+        transition: border-color 0.15s ease !important;
+    }
+    [data-testid="stChatInput"] > div:focus-within {
+        border-color: rgba(255, 255, 255, 0.28) !important;
+    }
+
+    /* Inner flex wrappers inside stChatInput */
+    [data-testid="stChatInput"] > div > div {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+    }
+    [data-testid="stChatInput"] > div > div > div:first-child {
+        display: flex !important;
+        align-items: center !important;
+        flex: 1 !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        min-width: 0 !important;
+    }
+
+    /* Completely Transparent Text Area - Centered on Single Line */
+    [data-testid="stChatInput"] textarea {
+        color: #ececf1 !important;
+        font-size: 0.94rem !important;
+        font-family: inherit !important;
+        height: 25px !important;
+        min-height: 25px !important;
+        max-height: 25px !important;
+        line-height: 25px !important;
+        border: none !important;
+        outline: none !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        padding: 4px 105px 0 0 !important;
+        margin: 1px 0 0 0 !important;
+        resize: none !important;
+        box-shadow: none !important;
+        box-sizing: border-box !important;
+        display: block !important;
+        width: 100% !important;
+        align-self: center !important;
+        overflow: hidden !important;
+    }
+    [data-testid="stChatInput"] textarea:focus {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #8e8ea0 !important;
+        font-size: 0.94rem !important;
+        line-height: 24px !important;
+    }
+
+    /* Submit Button inside capsule on the far right */
+    button[data-testid="stChatInputSubmitButton"] {
+        position: absolute !important;
+        right: 8px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        background: #ffffff !important;
+        border-radius: 50% !important;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
+        max-width: 32px !important;
+        max-height: 32px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 10 !important;
+        transition: opacity 0.15s ease !important;
+    }
+    button[data-testid="stChatInputSubmitButton"] svg {
+        fill: #000000 !important;
+        color: #000000 !important;
+        width: 16px !important;
+        height: 16px !important;
+    }
+    button[data-testid="stChatInputSubmitButton"]:disabled {
+        background: rgba(255, 255, 255, 0.12) !important;
+        opacity: 0.4 !important;
+    }
+    button[data-testid="stChatInputSubmitButton"]:disabled svg {
+        fill: #8e8ea0 !important;
+        color: #8e8ea0 !important;
+    }
+
+    /* Effort Button inside capsule, right next to the send button */
+    [data-testid="stBottom"] [data-testid="stPopover"],
+    [data-testid="stBottom"] .stPopover {
+        position: absolute !important;
+        right: 48px !important;
+        top: 24px !important;
+        transform: translateY(-50%) !important;
+        height: 28px !important;
+        width: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 99 !important;
+    }
+    [data-testid="stBottom"] [data-testid="stPopover"] button {
+        height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
+        line-height: 28px !important;
+        border-radius: 14px !important;
+        border: none !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        color: #8e8ea0 !important;
+        font-size: 0.86rem !important;
+        font-weight: 500 !important;
+        padding: 0 8px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        box-shadow: none !important;
+        transition: background-color 0.15s ease, color 0.15s ease !important;
+        cursor: pointer !important;
+        margin: 0 !important;
+    }
+    [data-testid="stBottom"] [data-testid="stPopover"] button:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: #ececf1 !important;
+    }
+    [data-testid="stBottom"] [data-testid="stPopover"] button div,
+    [data-testid="stBottom"] [data-testid="stPopover"] button p,
+    [data-testid="stBottom"] [data-testid="stPopover"] button span {
+        display: inline-flex !important;
+        align-items: center !important;
+        line-height: 28px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 100% !important;
+    }
+
+    /* Hide all chevrons/icons on effort button (hide material symbols expand_more and second div) */
+    .effort-pill-container [data-testid="stPopover"] .material-symbols-outlined,
+    .effort-pill-container [data-testid="stPopover"] button .material-symbols-outlined,
+    .effort-pill-container [data-testid="stPopover"] button > div > div:nth-child(2),
+    [data-testid="stBottom"] [data-testid="stPopover"] .material-symbols-outlined,
+    [data-testid="stBottom"] [data-testid="stPopover"] button > div > div:nth-child(2),
+    .effort-pill-container [data-testid="stPopover"] button svg,
+    .effort-pill-container [data-testid="stPopover"] button [data-testid*="Icon"],
+    .effort-pill-container [data-testid="stPopover"] button [data-testid*="icon"],
+    .effort-pill-container [data-testid="stPopover"] button [data-testid="stIconMaterial"] {
+        display: none !important;
+        visibility: hidden !important;
+        font-size: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Effort Dropdown Menu - ChatGPT Reasoning Effort Style */
+    [data-testid="stPopoverBody"]:has([data-testid*="effort_sel"]),
+    [data-testid="stPopoverBody"]:has(button) {
+        background: #212121 !important;
+        background-color: #212121 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6) !important;
+        padding: 6px !important;
+        min-width: 210px !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stElementContainer"] {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stButton"] {
+        margin: 0 !important;
+        padding: 1px 0 !important;
+        width: 100% !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stButton"] button {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        padding: 0 12px !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        border-radius: 8px !important;
+        color: #ececf1 !important;
+        font-size: 0.92rem !important;
+        font-weight: 400 !important;
+        text-align: left !important;
+        box-shadow: none !important;
+        transition: background-color 0.15s ease !important;
+        cursor: pointer !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stButton"] button:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: #ffffff !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stButton"] button > div {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        width: auto !important;
+        margin: 0 !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stButton"] button p {
+        display: flex !important;
+        align-items: center !important;
+        margin: 0 !important;
+        font-size: 0.92rem !important;
+        color: inherit !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stButton"] button code {
+        background: rgba(255, 255, 255, 0.12) !important;
+        color: #8e8ea0 !important;
+        font-size: 0.72rem !important;
+        font-family: inherit !important;
+        font-weight: 500 !important;
+        padding: 2px 7px !important;
+        border-radius: 6px !important;
+        border: none !important;
+        margin-left: 8px !important;
+    }
+    /* When an option is active (primary), show the blue checkmark on the far right */
+    [data-testid="stPopoverBody"] div[data-testid="stButton"] button[data-testid*="primary"] {
+        background: transparent !important;
+        color: #ffffff !important;
+        font-weight: 500 !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stButton"] button[data-testid*="primary"]:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stButton"] button[data-testid*="primary"]::after {
+        content: "✓";
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #2f81f7;
+        margin-left: auto;
+        padding-left: 16px;
     }
 
     /* Hide standard Streamlit header clutter */
@@ -477,205 +960,126 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+def format_sidebar_doc_name(filename: str) -> str:
+    """Extract filename stem without extension, letting it fill the line naturally till the end."""
+    return filename.rsplit(".", 1)[0] if "." in filename else filename
+
+
 # =======================================================================
-# SIDEBAR (Enterprise NotebookLM & Claude Style)
+# SIDEBAR (Exact ChatGPT Layout)
 # =======================================================================
 with st.sidebar:
-    # 1. Sleek Brand Header
+    # Brand
     st.markdown(
         """
-        <div style="display:flex; align-items:center; gap:10px; margin: 2px 0 12px 0;">
-            <div style="background: linear-gradient(135deg, #10a37f, #059669); width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 14px rgba(16, 163, 127, 0.35); flex-shrink: 0;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/>
-                </svg>
-            </div>
-            <div>
-                <div style="display:flex; align-items:center; gap:6px;">
-                    <span style="font-weight:700; font-size:1.02rem; letter-spacing:-0.3px; color:#f1f5f9;">Assistant</span>
-                    <span style="font-size:0.62rem; font-weight:700; background:rgba(16, 163, 127, 0.18); color:#34d399; border:1px solid rgba(16, 163, 127, 0.35); padding:1px 6px; border-radius:10px; letter-spacing:0.5px;">RAG</span>
-                </div>
-                <div style="font-size:0.72rem; color:#8e8ea0;">Enterprise Knowledge Assistant</div>
-            </div>
+        <div class="sidebar-brand">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ececf1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/>
+            </svg>
+            <span>Document AI</span>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # 2. Primary New Chat Button
-    st.markdown('<div class="new-chat-btn">', unsafe_allow_html=True)
-    if st.button("＋ New Conversation", use_container_width=True):
-        cm.clear_history()
+    # 1. New Chat Option
+    st.markdown('<div class="sidebar-action-btn">', unsafe_allow_html=True)
+    if st.button("＋ New chat", key="sidebar_new_chat", use_container_width=True):
+        cm.create_new_chat()
         st.session_state.suggested_questions = []
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # 3. Live System & Model Metric Pills
-    _, _, configured_model = llm_service.get_llm_config()
-    st.markdown(
-        f"""
-        <div class="system-metric-pill">
-            <div style="display:flex; align-items:center;">
-                <span class="pulse-dot"></span>
-                <span style="color:#d1d5db; font-weight:500;">FAISS Vector Store</span>
-            </div>
-            <span style="color:#10a37f; font-weight:600;">{store.total_chunks} Chunks</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    if not llm_service.is_configured():
-        st.warning("⚠️ LLM_API_KEY is not set in `.env`.")
-
-    # 4. Knowledge Sources & File Ingestion
-    registry = dm.get_document_registry()
-    doc_count = len(registry)
-    st.markdown(
-        f"""
-        <div class="sidebar-section-header">
-            <span>Knowledge Sources</span>
-            <span style="color:#10a37f; font-size:0.70rem;">{doc_count} Indexed</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    # 2. Upload Document Button (Always visible & fresh)
+    if "doc_uploader_key" not in st.session_state:
+        st.session_state.doc_uploader_key = 0
 
     uploaded_files = st.file_uploader(
-        "Upload PDF, DOCX, or TXT documents",
+        "Upload document",
         type=["pdf", "txt", "docx"],
         accept_multiple_files=True,
         label_visibility="collapsed",
+        key=f"session_doc_uploader_{st.session_state.doc_uploader_key}",
     )
 
+    # Only show error if the upload is wrong
     if uploaded_files:
+        has_error = False
         for uploaded in uploaded_files:
-            already_done_key = f"processed_{uploaded.name}_{uploaded.size}"
-            if st.session_state.get(already_done_key):
-                continue
+            file_bytes = uploaded.getvalue()
+            result = dm.add_document(uploaded.name, file_bytes, store=store)
 
-            with st.status(f"Indexing {uploaded.name}...", expanded=False) as status:
-                st.write("Extracting content pages")
-                file_bytes = uploaded.getvalue()
-                st.write("Generating dense embeddings (384-d)")
-                result = dm.add_document(uploaded.name, file_bytes)
-                st.write("Updating FAISS vector index")
+            if result["success"]:
+                st.session_state.suggested_questions = []
+            elif result["duplicate"]:
+                pass
+            else:
+                has_error = True
+                st.error(f"{uploaded.name}: {result['message']}")
 
-                if result["success"]:
-                    status.update(label=f"✓ {uploaded.name} indexed", state="complete")
-                    st.session_state.suggested_questions = []
-                elif result["duplicate"]:
-                    status.update(label=f"{result['message']}", state="complete")
-                else:
-                    status.update(label=f"Error: {result['message']}", state="error")
+        # Reset uploader key so button remains permanently visible and ready for next upload
+        if not has_error:
+            st.session_state.doc_uploader_key += 1
+            st.rerun()
 
-            st.session_state[already_done_key] = True
-
-    # 5. NotebookLM-Style Document Cards
+    # 3. Uploaded Documents List (Clean text, metadata shown on tap)
+    registry = dm.get_document_registry()
     if registry:
-        for info in registry.values():
+        st.markdown('<div class="sidebar-section-header">Documents</div>', unsafe_allow_html=True)
+        for file_hash, info in registry.items():
             fname = info["filename"]
             ext = fname.rsplit(".", 1)[-1].upper() if "." in fname else "DOC"
-            badge_class = "doc-badge-pdf" if ext == "PDF" else ("doc-badge-docx" if ext in ("DOC", "DOCX") else "doc-badge-txt")
+            display_name = format_sidebar_doc_name(fname)
 
-            st.markdown(
-                f"""
-                <div class="notebooklm-doc-card">
-                    <div class="doc-card-top">
-                        <span class="doc-badge {badge_class}">{ext}</span>
-                        <span class="doc-card-title" title="{html.escape(fname)}">{html.escape(fname)}</span>
-                    </div>
-                    <div class="doc-card-meta">
-                        <span>{info['pages']} pgs &bull; {info['chunks']} chunks &bull; {info['size']}</span>
-                        <span class="doc-indexed-tag">
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10a37f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            Active
-                        </span>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-    else:
-        st.caption("📁 No documents uploaded yet. Drop a PDF, TXT, or DOCX above to index.")
+            col_doc, col_del = st.columns([0.86, 0.14], vertical_alignment="center")
+            with col_doc:
+                with st.popover(display_name, use_container_width=True):
+                    st.markdown(f"**Document Details**")
+                    st.markdown(f"**Filename:** `{fname}`")
+                    st.markdown(f"**Type:** `{ext}`")
+                    st.markdown(f"**Pages:** `{info['pages']}`")
+                    st.markdown(f"**Chunks:** `{info['chunks']}`")
+                    st.markdown(f"**Size:** `{info['size']}`")
+                    st.markdown(f"**Characters:** `{info['characters']:,}`")
+                    st.caption("Indexed for this session.")
+            with col_del:
+                if st.button("✕", key=f"del_doc_{file_hash}", help=f"Remove {fname}", use_container_width=True):
+                    dm.remove_document(fname, store=store)
+                    st.session_state.suggested_questions = []
+                    st.rerun()
 
-    # 6. Knowledge Actions (NotebookLM-Style Quick Actions)
-    doc_names = dm.list_document_names()
-    if doc_names:
-        st.markdown(
-            """
-            <div class="sidebar-section-header">
-                <span>Knowledge Actions</span>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        selected_doc = st.selectbox(
-            "Target Document",
-            doc_names,
-            key="summarize_target",
-            label_visibility="collapsed",
-        )
+    # 4. Chats List (Recents - Exact ChatGPT Text Rows)
+    chats = cm.get_all_chats()
+    current_chat_id = cm.get_current_chat_id()
 
-        col_a, col_b = st.columns(2)
-        with col_a:
-            if st.button("📋 Summarize", use_container_width=True):
-                with st.spinner(f"Synthesizing {selected_doc}..."):
-                    summary = rag_engine.summarize_document(selected_doc, store)
-                cm.add_message("assistant", f"**Executive Summary of `{selected_doc}`:**\n\n{summary}")
-                st.rerun()
-        with col_b:
-            if st.button("💡 Questions", use_container_width=True):
-                with st.spinner("Generating study queries..."):
-                    st.session_state.suggested_questions = rag_engine.generate_suggested_questions(
-                        selected_doc, store
-                    )
-                st.rerun()
+    st.markdown('<div class="sidebar-section-header">Recents</div>', unsafe_allow_html=True)
 
-    # 7. Preferences & Generation Mode (Collapsible)
-    with st.expander("⚙️ Response Settings"):
-        style_choice = st.selectbox(
-            "Answer Depth",
-            ["Detailed", "Simple", "Academic"],
-            index=["Detailed", "Simple", "Academic"].index(st.session_state.get("answer_style", "Detailed")),
-            key="pref_style_choice",
-        )
-        st.session_state["answer_style"] = style_choice
+    for chat in chats:
+        c_id = chat["id"]
+        c_title = chat.get("title", "New Chat")
+        is_active = (c_id == current_chat_id)
 
-        exam_toggle = st.checkbox(
-            "Exam Prep Mode",
-            value=st.session_state.get("exam_mode", False),
-            key="pref_exam_toggle",
-            help="Structures answers with formulas, definitions, key takeaways, and practice test questions.",
-        )
-        st.session_state["exam_mode"] = exam_toggle
-
-    # 8. Bottom Danger Zone & Reset Utilities
-    st.divider()
-    col_clear1, col_clear2 = st.columns(2)
-    with col_clear1:
-        if st.button("Clear Chat", use_container_width=True):
-            cm.clear_history()
-            st.rerun()
-    with col_clear2:
-        if st.button("Reset Index", use_container_width=True):
-            dm.clear_all_documents()
-            st.session_state.suggested_questions = []
-            for key in list(st.session_state.keys()):
-                if key.startswith("processed_"):
-                    del st.session_state[key]
-            st.rerun()
-
-    st.markdown(
-        """
-        <div style="margin-top: 14px; font-size: 0.72rem; color: #6e6e80; text-align: center;">
-            Grounded Semantic Search &bull; FAISS Vector Store
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        if is_active and len(chats) > 1:
+            col_c, col_d = st.columns([0.88, 0.12])
+            with col_c:
+                st.markdown('<div class="chat-row-active">', unsafe_allow_html=True)
+                if st.button(c_title, key=f"chat_{c_id}", use_container_width=True):
+                    pass
+                st.markdown("</div>", unsafe_allow_html=True)
+            with col_d:
+                st.markdown('<div class="chat-del-btn">', unsafe_allow_html=True)
+                if st.button("✕", key=f"del_{c_id}", help="Delete chat", use_container_width=True):
+                    cm.delete_chat(c_id)
+                    st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            item_class = "chat-row-active" if is_active else "chat-row"
+            st.markdown(f'<div class="{item_class}">', unsafe_allow_html=True)
+            if st.button(c_title, key=f"chat_{c_id}", use_container_width=True):
+                if c_id != current_chat_id:
+                    cm.switch_chat(c_id)
+                    st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_claude_thought(label: str, steps: list, is_done: bool = False) -> str:
@@ -703,15 +1107,38 @@ def render_claude_thought(label: str, steps: list, is_done: bool = False) -> str
 
 
 # =======================================================================
-# MAIN CHAT AREA
+# MAIN CHAT DISPLAY AREA
 # =======================================================================
 history = cm.get_history()
 
 # Check for pending query from suggestion buttons / quick starters
 pending_query = st.session_state.pop("_pending_question", None)
 
-# Chat input widget
-user_input = st.chat_input("Ask a question about your documents...")
+# =======================================================================
+# BOTTOM ASK QUESTION BOX & EFFORT LEVEL BUTTON (ChatGPT Style)
+# =======================================================================
+with st.bottom:
+    user_input = st.chat_input("Ask a question about your documents...")
+    current_effort = st.session_state.get("answer_depth", "Medium")
+    with st.popover(current_effort, use_container_width=False):
+        for level in ["Low", "Medium", "High"]:
+            is_selected = (level == current_effort)
+            label = "Medium `Default`" if level == "Medium" else level
+            btn_type = "primary" if is_selected else "secondary"
+            if st.button(
+                label,
+                key=f"effort_sel_{level}",
+                use_container_width=True,
+                type=btn_type,
+            ):
+                st.session_state["answer_depth"] = level
+                st.rerun()
+    st.markdown(
+        """
+        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="display:none;" onload="if(!window._effortCloserInit){window._effortCloserInit=true;document.addEventListener('click',function(e){var b=e.target&&e.target.closest('[data-testid=stPopoverBody] button');if(b){setTimeout(function(){document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',keyCode:27,which:27,bubbles:true}));},40);}},true);}">
+        """,
+        unsafe_allow_html=True,
+    )
 
 # Active query from input box or button click
 active_query = user_input or pending_query
@@ -754,27 +1181,15 @@ if not history and not active_query:
             st.session_state["_pending_question"] = "What practical takeaways, solutions, or recommendations does this document offer?"
             st.rerun()
 
-# ---------------- SUGGESTED QUESTIONS (Chips) ----------------
-if st.session_state.suggested_questions and not active_query:
-    st.markdown(
-        """
-        <div style="font-size:0.8rem; font-weight:600; color:#8e8ea0; margin: 12px 0 6px 0;">
-            Derived Exploration Questions
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    for q in st.session_state.suggested_questions:
-        if st.button(f"→  {q}", key=f"sug_{q}"):
-            st.session_state["_pending_question"] = q
-            st.rerun()
-
 # ---------------- CHAT HISTORY DISPLAY ----------------
 for message in history:
     if message["role"] == "user":
         with st.chat_message("user", avatar=AVATAR_USER):
             st.markdown('<div class="user-chat-marker"></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="user-bubble-container"><div class="user-bubble">{html.escape(message["content"])}</div></div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="user-bubble-container"><div class="user-bubble">{html.escape(message["content"])}</div></div>',
+                unsafe_allow_html=True,
+            )
     else:
         with st.chat_message("assistant", avatar=AVATAR_ASSISTANT):
             st.markdown('<div class="assistant-chat-marker"></div>', unsafe_allow_html=True)
@@ -806,17 +1221,20 @@ for message in history:
                             unsafe_allow_html=True,
                         )
 
-# ---------------- ACTIVE QUESTION PROCESSING (Immediate display + Claude progress) ----------------
+# ---------------- ACTIVE QUESTION PROCESSING ----------------
 if active_query:
     query_str = active_query.strip()
     if query_str:
-        # Step 1: Immediately show the user question on the far right side
+        # Step 1: Record user question (names chat after first asked question)
         cm.add_message("user", query_str)
         with st.chat_message("user", avatar=AVATAR_USER):
             st.markdown('<div class="user-chat-marker"></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="user-bubble-container"><div class="user-bubble">{html.escape(query_str)}</div></div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="user-bubble-container"><div class="user-bubble">{html.escape(query_str)}</div></div>',
+                unsafe_allow_html=True,
+            )
 
-        # Step 2: Open assistant response container on the left side
+        # Step 2: Open assistant response container
         with st.chat_message("assistant", avatar=AVATAR_ASSISTANT):
             st.markdown('<div class="assistant-chat-marker"></div>', unsafe_allow_html=True)
             thought_placeholder = st.empty()
@@ -870,9 +1288,8 @@ if active_query:
                     )
 
                     context = build_context(retrieved)
-                    active_style = st.session_state.get("answer_style", "Detailed")
-                    active_exam = st.session_state.get("exam_mode", False)
-                    prompt = build_prompt(query_str, context, answer_style=active_style, exam_mode=active_exam)
+                    active_depth = st.session_state.get("answer_depth", "Medium")
+                    prompt = build_prompt(query_str, context, answer_style=active_depth)
 
                     try:
                         answer_text = rag_engine.generate_answer(prompt)
@@ -886,7 +1303,6 @@ if active_query:
                         for chunk, score in retrieved
                     ]
 
-                    # Complete status pill (single-line, tap to expand full steps log)
                     steps_log = [
                         ("Queried dense vector embeddings (FAISS)", "done"),
                         (f"Retrieved {len(sources)} matching excerpts from {doc_summary_label}", "done"),
@@ -899,7 +1315,6 @@ if active_query:
 
                     answer_placeholder.markdown(answer_text)
 
-                    # Show citations expander
                     with st.expander(f"Citations ({len(sources)} references)"):
                         for i, src in enumerate(sources, start=1):
                             confidence = int(src["score"] * 100) if src.get("score") else None
@@ -914,3 +1329,6 @@ if active_query:
                             )
 
                     cm.add_message("assistant", answer_text, sources=sources)
+
+        # Trigger rerun so sidebar updates chat title based on the first asked question
+        st.rerun()
