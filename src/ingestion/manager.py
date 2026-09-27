@@ -1,15 +1,11 @@
 """Document management module handling document upload, registry, and indexing."""
 
 import os
-import pickle
 from typing import Dict, List, Optional
 
 from src.config.settings import (
-    DOC_REGISTRY_PATH,
     MAX_FILE_SIZE_MB,
     ALLOWED_EXTENSIONS,
-    FAISS_INDEX_PATH,
-    METADATA_PATH,
 )
 from src.ingestion.parser import (
     extract_text_from_pdf,
@@ -27,26 +23,20 @@ logger = get_logger("ingestion.manager")
 _global_vector_store: Optional[VectorStore] = None
 
 
-def get_vector_store(
-    index_path: str = FAISS_INDEX_PATH, metadata_path: str = METADATA_PATH
-) -> VectorStore:
-    """Return the active VectorStore instance, utilizing Streamlit cache if in UI context."""
-    global _global_vector_store
+def get_vector_store() -> VectorStore:
+    """Return session-isolated VectorStore when in Streamlit, or in-memory instance."""
     try:
         import streamlit as st
-        if hasattr(st, "runtime") and st.runtime.exists():
-            @st.cache_resource(show_spinner=False)
-            def _cached_store():
-                s = VectorStore(index_path=index_path, metadata_path=metadata_path)
-                s.load_index()
-                return s
-            return _cached_store()
+        if hasattr(st, "runtime") and st.runtime.exists() and hasattr(st, "session_state"):
+            if "session_vector_store" not in st.session_state:
+                st.session_state.session_vector_store = VectorStore()
+            return st.session_state.session_vector_store
     except Exception:
         pass
 
+    global _global_vector_store
     if _global_vector_store is None:
-        _global_vector_store = VectorStore(index_path=index_path, metadata_path=metadata_path)
-        _global_vector_store.load_index()
+        _global_vector_store = VectorStore()
     return _global_vector_store
 
 
@@ -56,13 +46,10 @@ def process_document(file_bytes: bytes, filename: str) -> Dict:
 
     try:
         if lower_name.endswith(".pdf"):
-            from src.ingestion.parser import extract_text_from_pdf
             pages = extract_text_from_pdf(file_bytes)
         elif lower_name.endswith(".txt"):
-            from src.ingestion.parser import extract_text_from_txt
             pages = extract_text_from_txt(file_bytes)
         elif lower_name.endswith(".docx"):
-            from src.ingestion.parser import extract_text_from_docx
             pages = extract_text_from_docx(file_bytes)
         else:
             return {"success": False, "error": "Unsupported file type.", "pages": 0,
@@ -97,39 +84,21 @@ def process_document(file_bytes: bytes, filename: str) -> Dict:
     }
 
 
-def _load_registry() -> Dict[str, Dict]:
-    """Load the document registry from disk if valid index files exist."""
-    if not (os.path.exists(FAISS_INDEX_PATH) and os.path.exists(METADATA_PATH)):
-        if os.path.exists(DOC_REGISTRY_PATH):
-            try:
-                os.remove(DOC_REGISTRY_PATH)
-            except OSError:
-                pass
-        return {}
-    if os.path.exists(DOC_REGISTRY_PATH):
-        try:
-            with open(DOC_REGISTRY_PATH, "rb") as f:
-                return pickle.load(f)
-        except Exception:
-            return {}
-    return {}
-
-
-def _save_registry(registry: Dict[str, Dict]):
-    """Persist the document registry mapping to disk."""
-    with open(DOC_REGISTRY_PATH, "wb") as f:
-        pickle.dump(registry, f)
+_global_doc_registry: Dict[str, Dict] = {}
 
 
 def get_document_registry() -> Dict[str, Dict]:
-    """Retrieve the in-memory or persisted document registry."""
+    """Retrieve the session-isolated document registry."""
     try:
         import streamlit as st
-        if hasattr(st, "runtime") and st.runtime.exists() and hasattr(st, "session_state") and "doc_registry" in st.session_state:
+        if hasattr(st, "runtime") and st.runtime.exists() and hasattr(st, "session_state"):
+            if "doc_registry" not in st.session_state:
+                st.session_state.doc_registry = {}
             return st.session_state.doc_registry
     except Exception:
         pass
-    return _load_registry()
+    global _global_doc_registry
+    return _global_doc_registry
 
 
 def validate_file(filename: str, file_bytes: bytes) -> str:
@@ -149,7 +118,7 @@ def validate_file(filename: str, file_bytes: bytes) -> str:
 
 
 def add_document(filename: str, file_bytes: bytes, store: Optional[VectorStore] = None) -> Dict:
-    """Validate, deduplicate, chunk, embed, and index a new uploaded document."""
+    """Validate, deduplicate, chunk, embed, and index a new uploaded document in-memory."""
     error = validate_file(filename, file_bytes)
     if error:
         return {"success": False, "message": error, "duplicate": False}
@@ -173,7 +142,6 @@ def add_document(filename: str, file_bytes: bytes, store: Optional[VectorStore] 
 
     active_store = store or get_vector_store()
     active_store.add_documents(chunks, embeddings_matrix)
-    active_store.save_index()
 
     registry[file_hash] = {
         "filename": filename,
@@ -190,8 +158,7 @@ def add_document(filename: str, file_bytes: bytes, store: Optional[VectorStore] 
     except Exception:
         pass
 
-    _save_registry(registry)
-    logger.info("Added '%s' with %d chunks to vector store", filename, len(chunks))
+    logger.info("Added '%s' with %d chunks to session vector store", filename, len(chunks))
 
     return {
         "success": True,
@@ -202,25 +169,43 @@ def add_document(filename: str, file_bytes: bytes, store: Optional[VectorStore] 
 
 
 def clear_all_documents(store: Optional[VectorStore] = None):
-    """Clear in-memory and on-disk vector store and document registry."""
+    """Clear session vector store and document registry."""
     active_store = store or get_vector_store()
     active_store.clear_index()
 
     try:
         import streamlit as st
-        if hasattr(st, "runtime") and st.runtime.exists() and hasattr(st, "session_state") and "doc_registry" in st.session_state:
+        if hasattr(st, "runtime") and st.runtime.exists() and hasattr(st, "session_state"):
             st.session_state.doc_registry = {}
+            if "session_vector_store" in st.session_state:
+                st.session_state.session_vector_store = VectorStore()
     except Exception:
         pass
 
-    if os.path.exists(DOC_REGISTRY_PATH):
-        try:
-            os.remove(DOC_REGISTRY_PATH)
-        except OSError:
-            pass
-    logger.info("Cleared all indexed documents")
+    logger.info("Cleared session indexed documents")
+
+
+def remove_document(document_name: str, store: Optional[VectorStore] = None) -> bool:
+    """Remove a single document from session vector store and document registry."""
+    active_store = store or get_vector_store()
+    active_store.remove_document(document_name)
+
+    registry = get_document_registry()
+    hashes_to_remove = [h for h, info in registry.items() if info.get("filename") == document_name]
+    for h in hashes_to_remove:
+        del registry[h]
+
+    try:
+        import streamlit as st
+        if hasattr(st, "runtime") and st.runtime.exists() and hasattr(st, "session_state"):
+            st.session_state.doc_registry = registry
+    except Exception:
+        pass
+
+    logger.info("Removed '%s' from session vector store and registry", document_name)
+    return True
 
 
 def list_document_names() -> List[str]:
-    """Return filenames of all currently indexed documents."""
+    """Return filenames of all currently indexed documents in this session."""
     return [info["filename"] for info in get_document_registry().values()]

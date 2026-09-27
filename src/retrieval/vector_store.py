@@ -94,3 +94,25 @@ class VectorStore:
     def chunks_for_document(self, document_name: str) -> List[Dict]:
         """Return all metadata chunks for a specific document."""
         return [m for m in self.metadata if m.get("document") == document_name]
+
+    def remove_document(self, document_name: str) -> int:
+        """Remove all chunks and embeddings for a document from FAISS index and metadata."""
+        if not self.metadata:
+            return 0
+
+        remove_indices = np.array(
+            [i for i, m in enumerate(self.metadata) if m.get("document") == document_name],
+            dtype=np.int64,
+        )
+        if len(remove_indices) == 0:
+            return 0
+
+        if len(remove_indices) == len(self.metadata):
+            count = len(remove_indices)
+            self.create_index()
+            return count
+
+        selector = faiss.IDSelectorBatch(len(remove_indices), faiss.swig_ptr(remove_indices))
+        self.index.remove_ids(selector)
+        self.metadata = [m for m in self.metadata if m.get("document") != document_name]
+        return len(remove_indices)
