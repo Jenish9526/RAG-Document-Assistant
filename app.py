@@ -645,11 +645,11 @@ st.markdown(
     }
 
     /* =======================================================================
-       QUESTION TEXT BOX AREA (Exact ChatGPT Style)
+       QUESTION TEXT BOX AREA (Exact ChatGPT Style - Perfectly Centered)
        ======================================================================= */
     [data-testid="stBottom"] {
         background: transparent !important;
-        padding-bottom: 8px !important;
+        padding-bottom: 14px !important;
         padding-top: 0 !important;
     }
 
@@ -659,11 +659,21 @@ st.markdown(
         position: relative !important;
         max-width: 800px !important;
         margin: 0 auto !important;
-        padding: 0 !important;
+        padding: 0 16px !important;
         gap: 0 !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        max-height: 48px !important;
     }
 
     [data-testid="stBottom"] [data-testid="stElementContainer"] {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    [data-testid="stBottom"] [data-testid="stElementContainer"]:has(img) {
+        display: none !important;
+        height: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
     }
@@ -673,6 +683,10 @@ st.markdown(
         background: transparent !important;
         padding: 0 !important;
         margin: 0 !important;
+        width: 100% !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        max-height: 48px !important;
     }
     [data-testid="stChatInput"] > div {
         position: relative !important;
@@ -686,18 +700,23 @@ st.markdown(
         box-sizing: border-box !important;
         padding: 0 16px !important;
         display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
         align-items: center !important;
         justify-content: flex-start !important;
-        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
         transition: border-color 0.15s ease !important;
+        overflow: visible !important;
     }
     [data-testid="stChatInput"] > div:focus-within {
-        border-color: rgba(255, 255, 255, 0.28) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
     }
 
-    /* Inner flex wrappers inside stChatInput */
+    /* Inner flex wrappers inside stChatInput - Strict 1-row layout */
     [data-testid="stChatInput"] > div > div {
         display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
         align-items: center !important;
         justify-content: flex-start !important;
         width: 100% !important;
@@ -708,7 +727,9 @@ st.markdown(
     }
     [data-testid="stChatInput"] > div > div > div:first-child {
         display: flex !important;
+        flex-direction: row !important;
         align-items: center !important;
+        justify-content: flex-start !important;
         flex: 1 !important;
         height: 100% !important;
         margin: 0 !important;
@@ -717,8 +738,19 @@ st.markdown(
         min-width: 0 !important;
     }
 
+    /* Hide any extra instructions / badges that Streamlit adds */
+    [data-testid="stChatInput"] #stChatInputInstructions,
+    [data-testid="stChatInput"] [data-testid="stChatInputInstructions"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        width: 0 !important;
+    }
+
     /* Completely Transparent Text Area - Centered on Single Line */
-    [data-testid="stChatInput"] textarea {
+    [data-testid="stChatInput"] textarea,
+    [data-testid="stChatInputTextArea"],
+    .stChatInput textarea {
         color: #ececf1 !important;
         font-size: 0.94rem !important;
         font-family: inherit !important;
@@ -730,8 +762,8 @@ st.markdown(
         outline: none !important;
         background: transparent !important;
         background-color: transparent !important;
-        padding: 4px 105px 0 0 !important;
-        margin: 1px 0 0 0 !important;
+        padding: 0 130px 0 0 !important;
+        margin: 0 !important;
         resize: none !important;
         box-shadow: none !important;
         box-sizing: border-box !important;
@@ -739,23 +771,30 @@ st.markdown(
         width: 100% !important;
         align-self: center !important;
         overflow: hidden !important;
+        vertical-align: middle !important;
     }
-    [data-testid="stChatInput"] textarea:focus {
+    [data-testid="stChatInput"] textarea:focus,
+    [data-testid="stChatInputTextArea"]:focus,
+    .stChatInput textarea:focus {
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
     }
-    [data-testid="stChatInput"] textarea::placeholder {
+    [data-testid="stChatInput"] textarea::placeholder,
+    [data-testid="stChatInputTextArea"]::placeholder,
+    .stChatInput textarea::placeholder {
         color: #8e8ea0 !important;
         font-size: 0.94rem !important;
-        line-height: 24px !important;
+        line-height: 25px !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     /* Submit Button inside capsule on the far right */
     button[data-testid="stChatInputSubmitButton"] {
         position: absolute !important;
         right: 8px !important;
-        top: 50% !important;
+        top: 24px !important;
         transform: translateY(-50%) !important;
         background: #ffffff !important;
         border-radius: 50% !important;
@@ -772,7 +811,7 @@ st.markdown(
         margin: 0 !important;
         padding: 0 !important;
         z-index: 10 !important;
-        transition: opacity 0.15s ease !important;
+        transition: opacity 0.15s ease, background-color 0.15s ease !important;
     }
     button[data-testid="stChatInputSubmitButton"] svg {
         fill: #000000 !important;
@@ -793,10 +832,12 @@ st.markdown(
     [data-testid="stBottom"] [data-testid="stPopover"],
     [data-testid="stBottom"] .stPopover {
         position: absolute !important;
-        right: 48px !important;
+        right: 63px !important;
         top: 24px !important;
         transform: translateY(-50%) !important;
         height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
         width: auto !important;
         display: flex !important;
         align-items: center !important;
@@ -1135,7 +1176,7 @@ with st.bottom:
                 st.rerun()
     st.markdown(
         """
-        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="display:none;" onload="if(!window._effortCloserInit){window._effortCloserInit=true;document.addEventListener('click',function(e){var b=e.target&&e.target.closest('[data-testid=stPopoverBody] button');if(b){setTimeout(function(){document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',keyCode:27,which:27,bubbles:true}));},40);}},true);}">
+        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="display:none;" onload="if(!window._effortCloserInit){window._effortCloserInit=true;document.addEventListener('click',function(e){var b=e.target&&e.target.closest('[data-testid=stPopoverBody] button');if(b){setTimeout(function(){document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',keyCode:27,which:27,bubbles:true}));},40);}},true);var resetScroll=function(){var t=document.querySelector('[data-testid=stChatInput] textarea');if(t&&t.scrollTop!==0){t.scrollTop=0;}};document.addEventListener('input',resetScroll,true);document.addEventListener('focusin',resetScroll,true);}">
         """,
         unsafe_allow_html=True,
     )
