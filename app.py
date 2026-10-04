@@ -46,16 +46,163 @@ if "answer_depth" not in st.session_state:
 if "suggested_questions" not in st.session_state:
     st.session_state.suggested_questions = []
 
+if "theme" not in st.session_state:
+    st.session_state.theme = "light"  # Default to clean white/light theme
+
+is_dark = (st.session_state.theme == "dark")
+
+# Palette definition
+if is_dark:
+    bg_app = "#212121"
+    bg_sidebar = "#171717"
+    border_sidebar = "rgba(255, 255, 255, 0.08)"
+    border_subtle = "rgba(255, 255, 255, 0.12)"
+    border_input = "rgba(255, 255, 255, 0.14)"
+    text_primary = "#ececf1"
+    text_secondary = "#9ca3af"
+    text_muted = "#6b7280"
+    sidebar_text = "#ececf1"
+    sidebar_hover = "rgba(255, 255, 255, 0.08)"
+    active_chat_bg = "#262626"
+    active_chat_text = "#ffffff"
+    user_bubble_bg = "#2f2f2f"
+    user_bubble_border = "rgba(255, 255, 255, 0.06)"
+    user_bubble_text = "#ececf1"
+    popover_bg = "#212121"
+    popover_border = "rgba(255, 255, 255, 0.12)"
+    popover_text = "#ececf1"
+    popover_hover = "rgba(255, 255, 255, 0.08)"
+    input_bg = "#212121"
+    starter_btn_bg = "#262626"
+    starter_btn_border = "rgba(255, 255, 255, 0.1)"
+    starter_btn_text = "#ececf1"
+    starter_btn_hover = "#303030"
+    thought_bg = "rgba(255, 255, 255, 0.04)"
+    thought_open_bg = "rgba(20, 24, 30, 0.95)"
+    thought_border = "rgba(255, 255, 255, 0.1)"
+    thought_text = "#9ca3af"
+    thought_content_bg = "rgba(0, 0, 0, 0.25)"
+    thought_content_text = "#94a3b8"
+    expander_bg = "rgba(255, 255, 255, 0.02)"
+    expander_border = "rgba(255, 255, 255, 0.08)"
+    expander_text = "#ececf1"
+    submit_btn_bg = "#ffffff"
+    submit_btn_color = "#000000"
+    toggle_btn_bg = "rgba(255, 255, 255, 0.06)"
+    toggle_btn_border = "rgba(255, 255, 255, 0.12)"
+    toggle_btn_text = "#ececf1"
+else:
+    bg_app = "#ffffff"
+    bg_sidebar = "#f8fafc"
+    border_sidebar = "#e2e8f0"
+    border_subtle = "#e2e8f0"
+    border_input = "#cbd5e1"
+    text_primary = "#0f172a"
+    text_secondary = "#334155"
+    text_muted = "#64748b"
+    sidebar_text = "#1e293b"
+    sidebar_hover = "#e2e8f0"
+    active_chat_bg = "#e2e8f0"
+    active_chat_text = "#0f172a"
+    user_bubble_bg = "#f1f5f9"
+    user_bubble_border = "#e2e8f0"
+    user_bubble_text = "#0f172a"
+    popover_bg = "#ffffff"
+    popover_border = "#cbd5e1"
+    popover_text = "#0f172a"
+    popover_hover = "#f1f5f9"
+    input_bg = "#ffffff"
+    starter_btn_bg = "#ffffff"
+    starter_btn_border = "#cbd5e1"
+    starter_btn_text = "#0f172a"
+    starter_btn_hover = "#f8fafc"
+    thought_bg = "#f8fafc"
+    thought_open_bg = "#ffffff"
+    thought_border = "#cbd5e1"
+    thought_text = "#1e293b"
+    thought_content_bg = "#f8fafc"
+    thought_content_text = "#334155"
+    expander_bg = "#ffffff"
+    expander_border = "#e2e8f0"
+    expander_text = "#0f172a"
+    submit_btn_bg = "#10a37f"
+    submit_btn_color = "#ffffff"
+    toggle_btn_bg = "#ffffff"
+    toggle_btn_border = "#cbd5e1"
+    toggle_btn_text = "#0f172a"
+
 # =======================================================================
-# PROFESSIONAL CUSTOM STYLES (Exact ChatGPT Aesthetics)
 # =======================================================================
+# PROFESSIONAL CUSTOM STYLES (Light and Dark Unified Theme)
+# =======================================================================
+st.markdown(
+    f"""
+    <style>
+    :root {{
+        --bg-app: {bg_app};
+        --bg-sidebar: {bg_sidebar};
+        --border-sidebar: {border_sidebar};
+        --border-subtle: {border_subtle};
+        --border-input: {border_input};
+        --text-primary: {text_primary};
+        --text-secondary: {text_secondary};
+        --text-muted: {text_muted};
+        --sidebar-text: {sidebar_text};
+        --sidebar-hover: {sidebar_hover};
+        --active-chat-bg: {active_chat_bg};
+        --active-chat-text: {active_chat_text};
+        --user-bubble-bg: {user_bubble_bg};
+        --user-bubble-border: {user_bubble_border};
+        --user-bubble-text: {user_bubble_text};
+        --popover-bg: {popover_bg};
+        --popover-border: {popover_border};
+        --popover-text: {popover_text};
+        --popover-hover: {popover_hover};
+        --input-bg: {input_bg};
+        --starter-btn-bg: {starter_btn_bg};
+        --starter-btn-border: {starter_btn_border};
+        --starter-btn-text: {starter_btn_text};
+        --starter-btn-hover: {starter_btn_hover};
+        --thought-bg: {thought_bg};
+        --thought-open-bg: {thought_open_bg};
+        --thought-border: {thought_border};
+        --thought-text: {thought_text};
+        --thought-content-bg: {thought_content_bg};
+        --thought-content-text: {thought_content_text};
+        --expander-bg: {expander_bg};
+        --expander-border: {expander_border};
+        --expander-text: {expander_text};
+        --submit-btn-bg: {submit_btn_bg};
+        --submit-btn-color: {submit_btn_color};
+        --toggle-btn-bg: {toggle_btn_bg};
+        --toggle-btn-border: {toggle_btn_border};
+        --toggle-btn-text: {toggle_btn_text};
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    html, body, [class*="css"], [data-testid="stAppViewContainer"], .stApp {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        background-color: var(--bg-app) !important;
+        color: var(--text-primary) !important;
+    }
+
+    [data-testid="stAppViewContainer"] p,
+    [data-testid="stAppViewContainer"] span,
+    [data-testid="stAppViewContainer"] div,
+    [data-testid="stAppViewContainer"] li,
+    [data-testid="stAppViewContainer"] h1,
+    [data-testid="stAppViewContainer"] h2,
+    [data-testid="stAppViewContainer"] h3,
+    [data-testid="stAppViewContainer"] h4 {
+        color: var(--text-primary);
     }
 
     /* Clean subtle scrollbars */
@@ -67,19 +214,19 @@ st.markdown(
         background: transparent;
     }
     ::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.12);
+        background: rgba(120, 120, 120, 0.2);
         border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.22);
+        background: rgba(120, 120, 120, 0.35);
     }
 
     /* =======================================================================
-       SIDEBAR: EXACT CHATGPT STYLE (Matching Project Theme #0e1117)
+       SIDEBAR
        ======================================================================= */
     [data-testid="stSidebar"] {
-        background-color: #0e1117 !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background-color: var(--bg-sidebar) !important;
+        border-right: 1px solid var(--border-sidebar) !important;
     }
 
     [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
@@ -92,20 +239,45 @@ st.markdown(
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 6px 12px 12px 12px;
+        padding: 6px 4px 6px 4px;
         font-size: 1.05rem;
         font-weight: 600;
-        color: #ececf1;
+        color: var(--text-primary) !important;
         letter-spacing: -0.2px;
     }
+    .sidebar-brand svg {
+        stroke: var(--text-primary) !important;
+    }
 
-    /* ALL sidebar buttons default to transparent text rows (No white boxes!) */
+    /* Theme Toggle Button inside Sidebar */
+    .theme-toggle-box button {
+        background: var(--toggle-btn-bg) !important;
+        border: 1px solid var(--toggle-btn-border) !important;
+        color: var(--toggle-btn-text) !important;
+        font-size: 0.82rem !important;
+        font-weight: 500 !important;
+        border-radius: 8px !important;
+        padding: 5px 10px !important;
+        margin: 4px 0 8px 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+        transition: all 0.15s ease !important;
+    }
+    .theme-toggle-box button:hover {
+        border-color: #10a37f !important;
+        color: #10a37f !important;
+    }
+
+    /* ALL sidebar buttons default to transparent text rows */
     [data-testid="stSidebar"] button,
     [data-testid="stSidebar"] button[data-testid*="stBaseButton"] {
         background: transparent !important;
         background-color: transparent !important;
         border: none !important;
-        color: #ececf1 !important;
+        color: var(--sidebar-text) !important;
         text-align: left !important;
         justify-content: flex-start !important;
         padding: 8px 10px !important;
@@ -130,34 +302,30 @@ st.markdown(
         align-items: center !important;
         width: 100% !important;
         margin: 0 !important;
-    }
-    [data-testid="stSidebar"] button span {
-        display: inline-flex !important;
-        width: auto !important;
+        color: var(--sidebar-text) !important;
     }
 
     [data-testid="stSidebar"] button:hover,
     [data-testid="stSidebar"] button[data-testid*="stBaseButton"]:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
-        background-color: rgba(255, 255, 255, 0.08) !important;
-        color: #ffffff !important;
+        background: var(--sidebar-hover) !important;
+        background-color: var(--sidebar-hover) !important;
+        color: var(--text-primary) !important;
         border: none !important;
     }
 
-    /* Active Chat highlight in Recents (Subtle dark background #212121) */
+    /* Active Chat highlight in Recents */
     .chat-row-active button,
     .chat-row-active button[data-testid*="stBaseButton"] {
-        background: #212121 !important;
-        background-color: #212121 !important;
-        color: #ffffff !important;
-        font-weight: 500 !important;
+        background: var(--active-chat-bg) !important;
+        background-color: var(--active-chat-bg) !important;
+        color: var(--active-chat-text) !important;
+        font-weight: 600 !important;
         border: none !important;
     }
     .chat-row-active button:hover,
     .chat-row-active button[data-testid*="stBaseButton"]:hover {
-        background: #282828 !important;
-        background-color: #282828 !important;
-        color: #ffffff !important;
+        background: var(--active-chat-bg) !important;
+        color: var(--active-chat-text) !important;
     }
 
     /* Action buttons: New Chat */
@@ -166,9 +334,10 @@ st.markdown(
         font-size: 0.88rem !important;
         padding: 9px 12px !important;
         margin-bottom: 2px !important;
+        border: 1px solid var(--border-sidebar) !important;
     }
 
-    /* Clean Upload Button: Sleek button matching sidebar rows, hide all dropzone instructions */
+    /* Clean Upload Button */
     [data-testid="stFileUploader"] {
         padding: 0 !important;
         margin: 2px 0 6px 0 !important;
@@ -190,14 +359,12 @@ st.markdown(
         opacity: 1 !important;
         width: 100% !important;
         background: transparent !important;
-        background-color: transparent !important;
-        border: none !important;
+        border: 1px dashed var(--border-sidebar) !important;
         border-radius: 8px !important;
-        color: #ececf1 !important;
+        color: var(--sidebar-text) !important;
         font-size: 0.86rem !important;
         font-weight: 400 !important;
         padding: 8px 10px !important;
-        display: flex !important;
         align-items: center !important;
         justify-content: flex-start !important;
         gap: 8px !important;
@@ -205,43 +372,32 @@ st.markdown(
         transition: background-color 0.15s ease !important;
     }
     [data-testid="stFileUploader"] section button:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
-        background-color: rgba(255, 255, 255, 0.08) !important;
-        color: #ffffff !important;
-        border: none !important;
+        background: var(--sidebar-hover) !important;
+        color: var(--text-primary) !important;
     }
     [data-testid="stFileUploader"] section button p,
     [data-testid="stFileUploader"] section button span,
     [data-testid="stFileUploader"] section button div {
         font-size: 0.86rem !important;
-        color: #ececf1 !important;
+        color: var(--sidebar-text) !important;
         white-space: nowrap !important;
         margin: 0 !important;
     }
     [data-testid="stFileUploader"] section button svg {
-        fill: #ececf1 !important;
-        color: #ececf1 !important;
+        fill: var(--sidebar-text) !important;
+        color: var(--sidebar-text) !important;
         width: 16px !important;
         height: 16px !important;
-    }
-    [data-testid="stFileUploader"] section button:hover p,
-    [data-testid="stFileUploader"] section button:hover span,
-    [data-testid="stFileUploader"] section button:hover div {
-        color: #ffffff !important;
-    }
-    [data-testid="stFileUploader"] section button:hover svg {
-        fill: #ffffff !important;
-        color: #ffffff !important;
     }
     [data-testid="stFileUploader"] ul {
         display: none !important;
     }
 
-    /* Section Headers (e.g. 'Recents', 'Documents') */
+    /* Section Headers */
     .sidebar-section-header {
         font-size: 0.75rem;
         font-weight: 600;
-        color: #8e8ea0;
+        color: var(--text-muted) !important;
         padding: 16px 12px 6px 12px;
         letter-spacing: -0.1px;
     }
@@ -274,7 +430,7 @@ st.markdown(
         background: transparent !important;
         border: none !important;
         border-radius: 8px !important;
-        color: #ececf1 !important;
+        color: var(--sidebar-text) !important;
         font-size: 0.86rem !important;
         font-weight: 400 !important;
         padding: 0 4px !important;
@@ -286,10 +442,9 @@ st.markdown(
         gap: 0 !important;
     }
     [data-testid="stSidebar"] [data-testid="stPopover"] button:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
-        color: #ffffff !important;
+        background: var(--sidebar-hover) !important;
+        color: var(--text-primary) !important;
     }
-    /* Hide the popover chevron completely so it takes zero space */
     [data-testid="stSidebar"] [data-testid="stPopover"] button svg,
     [data-testid="stSidebar"] [data-testid="stPopover"] button [data-testid*="Icon"],
     [data-testid="stSidebar"] [data-testid="stPopover"] button [data-testid="stIconMaterial"],
@@ -303,7 +458,6 @@ st.markdown(
         margin: 0 !important;
         padding: 0 !important;
     }
-    /* Text container starts flush at left edge, 1-line height, no ellipsis */
     [data-testid="stSidebar"] [data-testid="stPopover"] button > div {
         display: block !important;
         width: 100% !important;
@@ -328,13 +482,13 @@ st.markdown(
         text-overflow: clip !important;
         width: 100% !important;
         min-width: 0 !important;
-        color: #ececf1 !important;
+        color: var(--sidebar-text) !important;
         font-size: 0.86rem !important;
         height: 32px !important;
         line-height: 32px !important;
     }
 
-    /* Document Delete Button: Completely hidden by default, square 28px by 28px */
+    /* Document Delete Button */
     [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]) [data-testid="stButton"] {
         display: flex !important;
         align-items: center !important;
@@ -353,7 +507,7 @@ st.markdown(
         background: transparent !important;
         border: none !important;
         border-radius: 6px !important;
-        color: #8e8ea0 !important;
+        color: var(--text-muted) !important;
         width: 28px !important;
         min-width: 28px !important;
         max-width: 28px !important;
@@ -368,33 +522,17 @@ st.markdown(
         text-align: center !important;
         transition: opacity 0.15s ease, visibility 0.15s ease, color 0.15s ease, background-color 0.15s ease !important;
     }
-    [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]) [data-testid="stButton"] button div,
-    [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]) [data-testid="stButton"] button p,
-    [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]) [data-testid="stButton"] button span {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-        width: 100% !important;
-        height: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        line-height: 1 !important;
-    }
-
-    /* Document Delete Button: Appears ONLY when the document row is hovered over */
     [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]):hover [data-testid="stButton"] button {
         opacity: 1 !important;
         visibility: visible !important;
     }
-
     [data-testid="stSidebar"] div[data-testid="stHorizontalBlock"]:has([data-testid="stPopover"]) [data-testid="stButton"] button:hover {
-        color: #f87171 !important;
-        background: rgba(239, 68, 68, 0.16) !important;
+        color: #ef4444 !important;
+        background: rgba(239, 68, 68, 0.12) !important;
         border-radius: 6px !important;
     }
 
-    /* Chat items in sidebar (Recents - Exact ChatGPT look) */
+    /* Chat items in sidebar (Recents) */
     .chat-row button {
         display: block !important;
         width: 100% !important;
@@ -402,7 +540,7 @@ st.markdown(
         justify-content: flex-start !important;
         background: transparent !important;
         border: none !important;
-        color: #ececf1 !important;
+        color: var(--sidebar-text) !important;
         font-size: 0.86rem !important;
         font-weight: 400 !important;
         padding: 7px 12px !important;
@@ -414,31 +552,21 @@ st.markdown(
         transition: background-color 0.15s ease !important;
     }
     .chat-row button:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
-        color: #ffffff !important;
+        background: var(--sidebar-hover) !important;
+        color: var(--text-primary) !important;
         border: none !important;
-    }
-    .chat-row-active button {
-        background: #212121 !important;
-        color: #ffffff !important;
-        font-weight: 500 !important;
-        border: none !important;
-    }
-    .chat-row-active button:hover {
-        background: #262626 !important;
-        color: #ffffff !important;
     }
 
     .chat-del-btn button {
         background: transparent !important;
         border: none !important;
-        color: #64748b !important;
+        color: var(--text-muted) !important;
         padding: 7px 4px !important;
         font-size: 0.76rem !important;
         box-shadow: none !important;
     }
     .chat-del-btn button:hover {
-        color: #f87171 !important;
+        color: #ef4444 !important;
         background: transparent !important;
     }
 
@@ -480,21 +608,6 @@ st.markdown(
         flex-grow: 1 !important;
     }
 
-    [data-testid="stChatMessage"]:has(.user-chat-marker) .stMarkdown,
-    [data-testid="stChatMessage"]:has(.user-chat-marker) [data-testid="stMarkdownContainer"] {
-        width: 100% !important;
-        display: flex !important;
-        justify-content: flex-end !important;
-        align-items: flex-end !important;
-    }
-
-    [data-testid="stChatMessage"]:has(.user-chat-marker) p {
-        display: flex !important;
-        justify-content: flex-end !important;
-        width: 100% !important;
-        margin: 0 !important;
-    }
-
     .user-bubble-container {
         display: flex !important;
         justify-content: flex-end !important;
@@ -502,8 +615,9 @@ st.markdown(
     }
 
     .user-bubble {
-        background: #2f2f2f !important;
-        color: #ececf1 !important;
+        background: var(--user-bubble-bg) !important;
+        border: 1px solid var(--user-bubble-border) !important;
+        color: var(--user-bubble-text) !important;
         padding: 10px 18px !important;
         border-radius: 18px !important;
         display: inline-block !important;
@@ -515,6 +629,7 @@ st.markdown(
         max-width: 80% !important;
         margin-left: auto !important;
         margin-right: 0 !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
     }
 
     /* Assistant Message */
@@ -542,7 +657,17 @@ st.markdown(
         width: 100% !important;
         font-size: 0.95rem !important;
         line-height: 1.65 !important;
-        color: #ececf1 !important;
+        color: var(--text-primary) !important;
+    }
+
+    [data-testid="stChatMessage"]:has(.assistant-chat-marker) [data-testid="stChatMessageContent"] p,
+    [data-testid="stChatMessage"]:has(.assistant-chat-marker) [data-testid="stChatMessageContent"] li,
+    [data-testid="stChatMessage"]:has(.assistant-chat-marker) [data-testid="stChatMessageContent"] strong,
+    [data-testid="stChatMessage"]:has(.assistant-chat-marker) [data-testid="stChatMessageContent"] h1,
+    [data-testid="stChatMessage"]:has(.assistant-chat-marker) [data-testid="stChatMessageContent"] h2,
+    [data-testid="stChatMessage"]:has(.assistant-chat-marker) [data-testid="stChatMessageContent"] h3,
+    [data-testid="stChatMessage"]:has(.assistant-chat-marker) [data-testid="stChatMessageContent"] h4 {
+        color: var(--text-primary) !important;
     }
 
     /* Expandable thought pill */
@@ -550,23 +675,22 @@ st.markdown(
         display: inline-block;
         margin: 2px 0 10px 0;
         max-width: fit-content;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--thought-bg) !important;
+        border: 1px solid var(--thought-border) !important;
         border-radius: 8px;
         font-size: 0.82rem;
-        color: #9ca3af;
+        color: var(--thought-text) !important;
         transition: all 0.15s ease-in-out;
         user-select: none;
     }
     .claude-thought-pill:hover {
-        background: rgba(255, 255, 255, 0.07);
-        border-color: rgba(255, 255, 255, 0.16);
-        color: #e5e7eb;
+        background: var(--popover-hover) !important;
+        color: var(--text-primary) !important;
     }
     .claude-thought-pill[open] {
-        background: rgba(20, 24, 30, 0.95);
-        border-color: rgba(16, 163, 127, 0.35);
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+        background: var(--thought-open-bg) !important;
+        border-color: #10a37f !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
     }
     .claude-thought-summary {
         display: inline-flex;
@@ -583,6 +707,10 @@ st.markdown(
     .claude-thought-summary::-webkit-details-marker {
         display: none;
     }
+    .claude-summary-label {
+        color: var(--thought-text) !important;
+        letter-spacing: -0.1px;
+    }
     .claude-spinner-inline {
         width: 12px;
         height: 12px;
@@ -598,26 +726,23 @@ st.markdown(
     .claude-check-inline {
         flex-shrink: 0;
     }
-    .claude-summary-label {
-        color: #d1d5db;
-        letter-spacing: -0.1px;
-    }
     .claude-chevron {
         transition: transform 0.2s ease;
         opacity: 0.6;
         margin-left: 3px;
         flex-shrink: 0;
+        stroke: var(--text-muted) !important;
     }
     .claude-thought-pill[open] .claude-chevron {
         transform: rotate(180deg);
     }
     .claude-thought-content {
         padding: 8px 14px 10px 14px;
-        border-top: 1px solid rgba(255, 255, 255, 0.07);
+        border-top: 1px solid var(--thought-border) !important;
         font-size: 0.76rem;
-        color: #94a3b8;
+        color: var(--thought-content-text) !important;
         line-height: 1.6;
-        background: rgba(0, 0, 0, 0.2);
+        background: var(--thought-content-bg) !important;
     }
     .claude-step-row {
         display: flex;
@@ -630,25 +755,59 @@ st.markdown(
         font-weight: bold;
     }
     .claude-step-row.active {
-        color: #f1f5f9;
+        color: #0284c7;
         font-weight: 500;
-    }
-    .claude-step-row.active .step-icon {
-        color: #38bdf8;
     }
 
     [data-testid="stExpander"] {
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid var(--expander-border) !important;
         border-radius: 8px !important;
-        background: rgba(255, 255, 255, 0.02) !important;
+        background: var(--expander-bg) !important;
         margin-top: 0.75rem !important;
+    }
+    [data-testid="stExpander"] summary,
+    [data-testid="stExpander"] p,
+    [data-testid="stExpander"] span,
+    [data-testid="stExpander"] strong {
+        color: var(--expander-text) !important;
+    }
+
+    /* Quick Starter Buttons */
+    [data-testid="stMainBlockContainer"] div[data-testid="stButton"] button {
+        background: var(--starter-btn-bg) !important;
+        background-color: var(--starter-btn-bg) !important;
+        border: 1px solid var(--starter-btn-border) !important;
+        color: var(--starter-btn-text) !important;
+        border-radius: 10px !important;
+        padding: 10px 14px !important;
+        font-size: 0.88rem !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+        transition: all 0.15s ease !important;
+    }
+    [data-testid="stMainBlockContainer"] div[data-testid="stButton"] button:hover {
+        background: var(--starter-btn-hover) !important;
+        background-color: var(--starter-btn-hover) !important;
+        border-color: var(--border-input) !important;
+        color: var(--text-primary) !important;
+    }
+    [data-testid="stMainBlockContainer"] div[data-testid="stButton"] button p {
+        color: var(--starter-btn-text) !important;
+    }
+    [data-testid="stMainBlockContainer"] div[data-testid="stButton"] button:hover p {
+        color: var(--text-primary) !important;
     }
 
     /* =======================================================================
-       QUESTION TEXT BOX AREA (Exact ChatGPT Style - Perfectly Centered)
+       QUESTION TEXT BOX AREA (ChatGPT Style - Perfectly Centered)
        ======================================================================= */
-    [data-testid="stBottom"] {
-        background: transparent !important;
+    [data-testid="stBottom"],
+    [data-testid="stBottom"] > div,
+    [data-testid="stBottom"] > div > div,
+    [data-testid="stBottom"] [data-testid="stBottomBlockContainer"],
+    .stBottom,
+    .stBottom > div {
+        background-color: var(--bg-app) !important;
+        background: var(--bg-app) !important;
         padding-bottom: 14px !important;
         padding-top: 0 !important;
     }
@@ -670,7 +829,6 @@ st.markdown(
         margin: 0 !important;
         padding: 0 !important;
     }
-
     [data-testid="stBottom"] [data-testid="stElementContainer"]:has(img) {
         display: none !important;
         height: 0 !important;
@@ -690,9 +848,9 @@ st.markdown(
     }
     [data-testid="stChatInput"] > div {
         position: relative !important;
-        background: #212121 !important;
-        background-color: #212121 !important;
-        border: 1px solid rgba(255, 255, 255, 0.14) !important;
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+        border: 1px solid var(--border-input) !important;
         border-radius: 26px !important;
         height: 48px !important;
         min-height: 48px !important;
@@ -704,15 +862,14 @@ st.markdown(
         flex-wrap: nowrap !important;
         align-items: center !important;
         justify-content: flex-start !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08) !important;
         transition: border-color 0.15s ease !important;
         overflow: visible !important;
     }
     [data-testid="stChatInput"] > div:focus-within {
-        border-color: rgba(255, 255, 255, 0.3) !important;
+        border-color: #10a37f !important;
     }
 
-    /* Inner flex wrappers inside stChatInput - Strict 1-row layout */
     [data-testid="stChatInput"] > div > div {
         display: flex !important;
         flex-direction: row !important;
@@ -738,20 +895,10 @@ st.markdown(
         min-width: 0 !important;
     }
 
-    /* Hide any extra instructions / badges that Streamlit adds */
-    [data-testid="stChatInput"] #stChatInputInstructions,
-    [data-testid="stChatInput"] [data-testid="stChatInputInstructions"] {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0 !important;
-        width: 0 !important;
-    }
-
-    /* Completely Transparent Text Area - Centered on Single Line */
     [data-testid="stChatInput"] textarea,
     [data-testid="stChatInputTextArea"],
     .stChatInput textarea {
-        color: #ececf1 !important;
+        color: var(--text-primary) !important;
         font-size: 0.94rem !important;
         font-family: inherit !important;
         height: 25px !important;
@@ -773,30 +920,23 @@ st.markdown(
         overflow: hidden !important;
         vertical-align: middle !important;
     }
-    [data-testid="stChatInput"] textarea:focus,
-    [data-testid="stChatInputTextArea"]:focus,
-    .stChatInput textarea:focus {
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
-    }
     [data-testid="stChatInput"] textarea::placeholder,
     [data-testid="stChatInputTextArea"]::placeholder,
     .stChatInput textarea::placeholder {
-        color: #8e8ea0 !important;
+        color: var(--text-muted) !important;
         font-size: 0.94rem !important;
         line-height: 25px !important;
         margin: 0 !important;
         padding: 0 !important;
     }
 
-    /* Submit Button inside capsule on the far right */
+    /* Submit Button inside capsule */
     button[data-testid="stChatInputSubmitButton"] {
         position: absolute !important;
         right: 8px !important;
         top: 24px !important;
         transform: translateY(-50%) !important;
-        background: #ffffff !important;
+        background: var(--submit-btn-bg) !important;
         border-radius: 50% !important;
         width: 32px !important;
         height: 32px !important;
@@ -814,21 +954,21 @@ st.markdown(
         transition: opacity 0.15s ease, background-color 0.15s ease !important;
     }
     button[data-testid="stChatInputSubmitButton"] svg {
-        fill: #000000 !important;
-        color: #000000 !important;
+        fill: var(--submit-btn-color) !important;
+        color: var(--submit-btn-color) !important;
         width: 16px !important;
         height: 16px !important;
     }
     button[data-testid="stChatInputSubmitButton"]:disabled {
-        background: rgba(255, 255, 255, 0.12) !important;
-        opacity: 0.4 !important;
+        background: var(--border-subtle) !important;
+        opacity: 0.5 !important;
     }
     button[data-testid="stChatInputSubmitButton"]:disabled svg {
-        fill: #8e8ea0 !important;
-        color: #8e8ea0 !important;
+        fill: var(--text-muted) !important;
+        color: var(--text-muted) !important;
     }
 
-    /* Effort Button inside capsule, right next to the send button */
+    /* Effort Button inside capsule */
     [data-testid="stBottom"] [data-testid="stPopover"],
     [data-testid="stBottom"] .stPopover {
         position: absolute !important;
@@ -854,8 +994,7 @@ st.markdown(
         border-radius: 14px !important;
         border: none !important;
         background: transparent !important;
-        background-color: transparent !important;
-        color: #8e8ea0 !important;
+        color: var(--text-secondary) !important;
         font-size: 0.86rem !important;
         font-weight: 500 !important;
         padding: 0 8px !important;
@@ -869,59 +1008,26 @@ st.markdown(
         margin: 0 !important;
     }
     [data-testid="stBottom"] [data-testid="stPopover"] button:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
-        background-color: rgba(255, 255, 255, 0.08) !important;
-        color: #ececf1 !important;
-    }
-    [data-testid="stBottom"] [data-testid="stPopover"] button div,
-    [data-testid="stBottom"] [data-testid="stPopover"] button p,
-    [data-testid="stBottom"] [data-testid="stPopover"] button span {
-        display: inline-flex !important;
-        align-items: center !important;
-        line-height: 28px !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        height: 100% !important;
+        background: var(--sidebar-hover) !important;
+        color: var(--text-primary) !important;
     }
 
-    /* Hide all chevrons/icons on effort button (hide material symbols expand_more and second div) */
-    .effort-pill-container [data-testid="stPopover"] .material-symbols-outlined,
-    .effort-pill-container [data-testid="stPopover"] button .material-symbols-outlined,
-    .effort-pill-container [data-testid="stPopover"] button > div > div:nth-child(2),
-    [data-testid="stBottom"] [data-testid="stPopover"] .material-symbols-outlined,
-    [data-testid="stBottom"] [data-testid="stPopover"] button > div > div:nth-child(2),
-    .effort-pill-container [data-testid="stPopover"] button svg,
-    .effort-pill-container [data-testid="stPopover"] button [data-testid*="Icon"],
-    .effort-pill-container [data-testid="stPopover"] button [data-testid*="icon"],
-    .effort-pill-container [data-testid="stPopover"] button [data-testid="stIconMaterial"] {
-        display: none !important;
-        visibility: hidden !important;
-        font-size: 0 !important;
-        width: 0 !important;
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    /* Effort Dropdown Menu - ChatGPT Reasoning Effort Style */
-    [data-testid="stPopoverBody"]:has([data-testid*="effort_sel"]),
-    [data-testid="stPopoverBody"]:has(button) {
-        background: #212121 !important;
-        background-color: #212121 !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    /* Popovers Dropdowns */
+    [data-testid="stPopoverBody"] {
+        background: var(--popover-bg) !important;
+        background-color: var(--popover-bg) !important;
+        border: 1px solid var(--popover-border) !important;
         border-radius: 12px !important;
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6) !important;
-        padding: 6px !important;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15) !important;
+        padding: 8px !important;
         min-width: 210px !important;
+        color: var(--popover-text) !important;
     }
-    [data-testid="stPopoverBody"] div[data-testid="stElementContainer"] {
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    [data-testid="stPopoverBody"] div[data-testid="stButton"] {
-        margin: 0 !important;
-        padding: 1px 0 !important;
-        width: 100% !important;
+    [data-testid="stPopoverBody"] p,
+    [data-testid="stPopoverBody"] span,
+    [data-testid="stPopoverBody"] strong,
+    [data-testid="stPopoverBody"] div {
+        color: var(--popover-text) !important;
     }
     [data-testid="stPopoverBody"] div[data-testid="stButton"] button {
         display: flex !important;
@@ -933,10 +1039,9 @@ st.markdown(
         min-height: 38px !important;
         padding: 0 12px !important;
         background: transparent !important;
-        background-color: transparent !important;
         border: none !important;
         border-radius: 8px !important;
-        color: #ececf1 !important;
+        color: var(--popover-text) !important;
         font-size: 0.92rem !important;
         font-weight: 400 !important;
         text-align: left !important;
@@ -945,51 +1050,17 @@ st.markdown(
         cursor: pointer !important;
     }
     [data-testid="stPopoverBody"] div[data-testid="stButton"] button:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
-        background-color: rgba(255, 255, 255, 0.08) !important;
-        color: #ffffff !important;
-    }
-    [data-testid="stPopoverBody"] div[data-testid="stButton"] button > div {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
-        width: auto !important;
-        margin: 0 !important;
-    }
-    [data-testid="stPopoverBody"] div[data-testid="stButton"] button p {
-        display: flex !important;
-        align-items: center !important;
-        margin: 0 !important;
-        font-size: 0.92rem !important;
-        color: inherit !important;
+        background: var(--popover-hover) !important;
+        color: var(--text-primary) !important;
     }
     [data-testid="stPopoverBody"] div[data-testid="stButton"] button code {
-        background: rgba(255, 255, 255, 0.12) !important;
-        color: #8e8ea0 !important;
+        background: var(--border-subtle) !important;
+        color: var(--text-muted) !important;
         font-size: 0.72rem !important;
-        font-family: inherit !important;
-        font-weight: 500 !important;
         padding: 2px 7px !important;
         border-radius: 6px !important;
         border: none !important;
         margin-left: 8px !important;
-    }
-    /* When an option is active (primary), show the blue checkmark on the far right */
-    [data-testid="stPopoverBody"] div[data-testid="stButton"] button[data-testid*="primary"] {
-        background: transparent !important;
-        color: #ffffff !important;
-        font-weight: 500 !important;
-    }
-    [data-testid="stPopoverBody"] div[data-testid="stButton"] button[data-testid*="primary"]:hover {
-        background: rgba(255, 255, 255, 0.08) !important;
-    }
-    [data-testid="stPopoverBody"] div[data-testid="stButton"] button[data-testid*="primary"]::after {
-        content: "✓";
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #2f81f7;
-        margin-left: auto;
-        padding-left: 16px;
     }
 
     /* Hide standard Streamlit header clutter */
@@ -1010,18 +1081,28 @@ def format_sidebar_doc_name(filename: str) -> str:
 # SIDEBAR (Exact ChatGPT Layout)
 # =======================================================================
 with st.sidebar:
-    # Brand
-    st.markdown(
-        """
-        <div class="sidebar-brand">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ececf1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/>
-            </svg>
-            <span>Document AI</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    # Brand and Theme Toggle Row
+    col_brand, col_theme = st.columns([0.65, 0.35], vertical_alignment="center")
+    with col_brand:
+        st.markdown(
+            f"""
+            <div class="sidebar-brand">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/>
+                </svg>
+                <span>Document AI</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with col_theme:
+        st.markdown('<div class="theme-toggle-box">', unsafe_allow_html=True)
+        toggle_label = "☀️ Light" if is_dark else "🌙 Dark"
+        toggle_help = "Switch to Light Mode" if is_dark else "Switch to Dark Mode"
+        if st.button(toggle_label, key="theme_toggle_btn", help=toggle_help, use_container_width=True):
+            st.session_state.theme = "light" if is_dark else "dark"
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # 1. New Chat Option
     st.markdown('<div class="sidebar-action-btn">', unsafe_allow_html=True)
@@ -1083,6 +1164,16 @@ with st.sidebar:
                     st.markdown(f"**Size:** `{info['size']}`")
                     st.markdown(f"**Characters:** `{info['characters']:,}`")
                     st.caption("Indexed for this session.")
+                    st.divider()
+                    if st.button("📝 Summarize Document", key=f"sum_{file_hash}", use_container_width=True):
+                        summary = rag_engine.summarize_document(fname, store)
+                        cm.add_message("assistant", f"### 📄 Document Summary: {fname}\n\n" + summary, sources=[{"document": fname, "page": 1, "score": 0.95}])
+                        st.rerun()
+                    if st.button("💡 Suggested Questions", key=f"sug_{file_hash}", use_container_width=True):
+                        qs = rag_engine.generate_suggested_questions(fname, store)
+                        qs_md = "\n".join([f"{i}. {q}" for i, q in enumerate(qs, start=1)])
+                        cm.add_message("assistant", f"### 💡 Suggested Questions for {fname}:\n\n" + qs_md, sources=[{"document": fname, "page": 1, "score": 0.95}])
+                        st.rerun()
             with col_del:
                 if st.button("✕", key=f"del_doc_{file_hash}", help=f"Remove {fname}", use_container_width=True):
                     dm.remove_document(fname, store=store)
@@ -1197,7 +1288,7 @@ if not history and not active_query:
             <h2 style="font-weight: 600; font-size: 1.65rem; margin-bottom: 8px; letter-spacing: -0.4px;">
                 How can I assist with your documents?
             </h2>
-            <p style="color: #8e8ea0; font-size: 0.94rem; line-height: 1.55; margin-bottom: 24px;">
+            <p style="color: var(--text-secondary); font-size: 0.94rem; line-height: 1.55; margin-bottom: 24px;">
                 Upload PDF, Word, or text files in the sidebar to ask questions, explore topics, and extract verified answers with exact page citations.
             </p>
         </div>
@@ -1255,7 +1346,7 @@ for message in history:
                         conf_str = f" • Match confidence: {confidence}%" if confidence else ""
                         st.markdown(
                             f"""
-                            <div style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.86rem;">
+                            <div style="padding: 6px 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.86rem;">
                                 <strong>{i}. {src['document']}</strong> — Page {src['page']}<span style="color:#8e8ea0;">{conf_str}</span>
                             </div>
                             """,
@@ -1362,7 +1453,7 @@ if active_query:
                             conf_str = f" • Match confidence: {confidence}%" if confidence else ""
                             st.markdown(
                                 f"""
-                                <div style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.86rem;">
+                                <div style="padding: 6px 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.86rem;">
                                     <strong>{i}. {src['document']}</strong> — Page {src['page']}<span style="color:#8e8ea0;">{conf_str}</span>
                                 </div>
                                 """,
