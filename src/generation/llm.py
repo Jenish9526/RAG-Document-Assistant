@@ -57,9 +57,9 @@ def generate_response(prompt: str) -> str:
     models_to_try = [primary_model]
     if "generativelanguage.googleapis.com" in base_url:
         for fallback in [
-            "gemini-3.7-flash",
-            "gemini-flash-lite-latest",
             "gemini-3.8-flash",
+            "gemini-flash-lite-latest",
+            "gemini-3.7-flash",
             "gemini-3.6-flash",
         ]:
             if fallback not in models_to_try:
