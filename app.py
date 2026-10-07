@@ -49,6 +49,9 @@ if "suggested_questions" not in st.session_state:
 if "theme" not in st.session_state:
     st.session_state.theme = "light"  # Default to clean white/light theme
 
+def toggle_theme():
+    st.session_state.theme = "light" if st.session_state.get("theme") == "dark" else "dark"
+
 is_dark = (st.session_state.theme == "dark")
 
 # Palette definition
@@ -192,6 +195,26 @@ st.markdown(
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         background-color: var(--bg-app) !important;
         color: var(--text-primary) !important;
+        transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    [data-testid="stAppViewContainer"],
+    [data-testid="stSidebar"],
+    [data-testid="stHeader"],
+    [data-testid="stBottom"],
+    .stChatFloatingInputContainer,
+    .stChatInput,
+    [data-testid="stChatInput"],
+    [data-testid="stChatMessage"],
+    .claude-thought,
+    .sidebar-brand,
+    button {
+        transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                    color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                    border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                    stroke 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                    fill 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     [data-testid="stAppViewContainer"] p,
@@ -203,6 +226,7 @@ st.markdown(
     [data-testid="stAppViewContainer"] h3,
     [data-testid="stAppViewContainer"] h4 {
         color: var(--text-primary);
+        transition: color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     /* Clean subtle scrollbars */
@@ -247,28 +271,6 @@ st.markdown(
     }
     .sidebar-brand svg {
         stroke: var(--text-primary) !important;
-    }
-
-    /* Theme Toggle Button inside Sidebar */
-    .theme-toggle-box button {
-        background: var(--toggle-btn-bg) !important;
-        border: 1px solid var(--toggle-btn-border) !important;
-        color: var(--toggle-btn-text) !important;
-        font-size: 0.82rem !important;
-        font-weight: 500 !important;
-        border-radius: 8px !important;
-        padding: 5px 10px !important;
-        margin: 4px 0 8px 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 6px !important;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-        transition: all 0.15s ease !important;
-    }
-    .theme-toggle-box button:hover {
-        border-color: #10a37f !important;
-        color: #10a37f !important;
     }
 
     /* ALL sidebar buttons default to transparent text rows */
@@ -329,12 +331,93 @@ st.markdown(
     }
 
     /* Action buttons: New Chat */
+    [data-testid="stSidebar"] .st-key-sidebar_new_chat button,
     .sidebar-action-btn button {
         font-weight: 500 !important;
         font-size: 0.88rem !important;
         padding: 9px 12px !important;
         margin-bottom: 2px !important;
         border: 1px solid var(--border-sidebar) !important;
+        background: var(--starter-btn-bg) !important;
+        background-color: var(--starter-btn-bg) !important;
+        color: var(--text-primary) !important;
+    }
+    [data-testid="stSidebar"] .st-key-sidebar_new_chat button:hover,
+    .sidebar-action-btn button:hover {
+        border-color: #10a37f !important;
+        color: #10a37f !important;
+        background: var(--sidebar-hover) !important;
+    }
+
+    /* Sleek Theme Toggle Pill Button */
+    .st-key-theme_toggle_btn,
+    .st-key-theme_toggle_btn > div {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        width: 100% !important;
+    }
+    [data-testid="stSidebar"] .st-key-theme_toggle_btn button,
+    [data-testid="stSidebar"] .st-key-theme_toggle_btn button[data-testid*="stBaseButton"],
+    .theme-toggle-box button {
+        background: var(--toggle-btn-bg) !important;
+        background-color: var(--toggle-btn-bg) !important;
+        border: 1px solid var(--toggle-btn-border) !important;
+        color: var(--toggle-btn-text) !important;
+        font-size: 0.8rem !important;
+        font-weight: 500 !important;
+        border-radius: 9999px !important;
+        padding: 5px 12px !important;
+        margin: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        width: auto !important;
+        min-width: 82px !important;
+        cursor: pointer !important;
+    }
+    [data-testid="stSidebar"] .st-key-theme_toggle_btn button:hover,
+    [data-testid="stSidebar"] .st-key-theme_toggle_btn button[data-testid*="stBaseButton"]:hover,
+    .theme-toggle-box button:hover {
+        border-color: #10a37f !important;
+        color: #10a37f !important;
+        background: var(--sidebar-hover) !important;
+        background-color: var(--sidebar-hover) !important;
+        box-shadow: 0 2px 8px rgba(16, 163, 127, 0.16) !important;
+    }
+    [data-testid="stSidebar"] .st-key-theme_toggle_btn button *,
+    .theme-toggle-box button * {
+        color: inherit !important;
+        justify-content: center !important;
+        text-align: center !important;
+        width: auto !important;
+    }
+    [data-testid="stSidebar"] .st-key-theme_toggle_btn button [data-testid="stMarkdownContainer"] p,
+    .theme-toggle-box button [data-testid="stMarkdownContainer"] p {
+        margin: 0 !important;
+        font-size: 0.8rem !important;
+        font-weight: 500 !important;
+        color: inherit !important;
+        justify-content: center !important;
+        letter-spacing: 0.2px !important;
+    }
+    [data-testid="stSidebar"] .st-key-theme_toggle_btn button span[data-testid="stIconMaterial"],
+    .theme-toggle-box button span[data-testid="stIconMaterial"] {
+        font-size: 1.12rem !important;
+        line-height: 1 !important;
+        color: inherit !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease !important;
+    }
+    [data-testid="stSidebar"] .st-key-theme_toggle_btn button:hover span[data-testid="stIconMaterial"],
+    .theme-toggle-box button:hover span[data-testid="stIconMaterial"] {
+        color: #10a37f !important;
+        transform: rotate(20deg) scale(1.12);
     }
 
     /* Clean Upload Button */
@@ -1097,11 +1180,15 @@ with st.sidebar:
         )
     with col_theme:
         st.markdown('<div class="theme-toggle-box">', unsafe_allow_html=True)
-        toggle_label = "☀️ Light" if is_dark else "🌙 Dark"
-        toggle_help = "Switch to Light Mode" if is_dark else "Switch to Dark Mode"
-        if st.button(toggle_label, key="theme_toggle_btn", help=toggle_help, use_container_width=True):
-            st.session_state.theme = "light" if is_dark else "dark"
-            st.rerun()
+        toggle_icon = ":material/light_mode:" if is_dark else ":material/dark_mode:"
+        toggle_label = "Light" if is_dark else "Dark"
+        st.button(
+            toggle_label,
+            icon=toggle_icon,
+            key="theme_toggle_btn",
+            on_click=toggle_theme,
+            use_container_width=True,
+        )
         st.markdown("</div>", unsafe_allow_html=True)
 
     # 1. New Chat Option
