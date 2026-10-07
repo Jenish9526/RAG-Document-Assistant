@@ -14,8 +14,8 @@ class HealthResponse(BaseModel):
 
 class QueryRequest(BaseModel):
     query: str = Field(..., description="User query or question about documents")
-    top_k: Optional[int] = Field(5, ge=1, le=20, description="Number of chunks to retrieve")
-    answer_style: Optional[str] = Field("Simple", description="Simple or Detailed")
+    top_k: Optional[int] = Field(None, ge=1, le=50, description="Number of chunks to retrieve (defaults dynamically based on effort level)")
+    answer_style: Optional[str] = Field("Medium", description="Low, Medium, or High effort level")
     exam_mode: Optional[bool] = Field(False, description="Enable structured output mode")
 
 

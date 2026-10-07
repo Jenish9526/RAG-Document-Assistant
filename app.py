@@ -1464,13 +1464,18 @@ if active_query:
                 answer_placeholder.markdown(warning_text)
                 cm.add_message("assistant", warning_text, sources=[])
             else:
+                active_depth = st.session_state.get("answer_depth", "Medium")
+                effort_params = rag_engine.get_effort_parameters(active_depth)
+                k_chunks = effort_params["top_k"]
+                max_tokens = effort_params["max_tokens"]
+
                 steps_log = [("Querying dense vector embeddings (FAISS)", "active")]
                 thought_placeholder.markdown(
-                    render_claude_thought("Searching document index...", steps_log, is_done=False),
+                    render_claude_thought(f"Searching document index ({active_depth} Effort)...", steps_log, is_done=False),
                     unsafe_allow_html=True,
                 )
 
-                retrieved = retrieve_relevant_chunks(query_str, store, top_k=TOP_K)
+                retrieved = retrieve_relevant_chunks(query_str, store, top_k=k_chunks)
 
                 if not retrieved:
                     thought_placeholder.empty()
@@ -1499,19 +1504,23 @@ if active_query:
                     steps_log = [
                         ("Queried dense vector embeddings (FAISS)", "done"),
                         (f"Retrieved {len(retrieved)} matching excerpts from {doc_summary_label}", "done"),
-                        ("Synthesizing grounded response with citations", "active"),
+                        ("Synthesizing complete grounded response with citations", "active"),
                     ]
                     thought_placeholder.markdown(
-                        render_claude_thought("Synthesizing response...", steps_log, is_done=False),
+                        render_claude_thought("Synthesizing full response...", steps_log, is_done=False),
                         unsafe_allow_html=True,
                     )
 
                     context = build_context(retrieved)
-                    active_depth = st.session_state.get("answer_depth", "Medium")
-                    prompt = build_prompt(query_str, context, answer_style=active_depth)
+                    prompt = build_prompt(
+                        query_str,
+                        context,
+                        answer_style=active_depth,
+                        history=history[-4:] if history else None,
+                    )
 
                     try:
-                        answer_text = rag_engine.generate_answer(prompt)
+                        answer_text = rag_engine.generate_answer(prompt, max_tokens=max_tokens)
                     except rag_engine.LLMNotConfiguredError as exc:
                         answer_text = str(exc)
                     except RuntimeError as exc:
@@ -1528,7 +1537,7 @@ if active_query:
                         ("Grounded answer verified against source documents", "done"),
                     ]
                     thought_placeholder.markdown(
-                        render_claude_thought(f"Synthesized from {len(sources)} source citations", steps_log, is_done=True),
+                        render_claude_thought(f"Synthesized from {len(sources)} source citations ({active_depth} Effort)", steps_log, is_done=True),
                         unsafe_allow_html=True,
                     )
 

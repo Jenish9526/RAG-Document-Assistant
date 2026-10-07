@@ -1,6 +1,4 @@
-"""Prompt templates and context aggregation for generation models."""
-
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 
 
 def build_context(retrieved: List[Tuple[Dict, float]]) -> str:
@@ -14,25 +12,31 @@ def build_context(retrieved: List[Tuple[Dict, float]]) -> str:
 
 
 def build_prompt(
-    query: str, context: str, answer_style: str = "Medium", exam_mode: bool = False
+    query: str,
+    context: str,
+    answer_style: str = "Medium",
+    exam_mode: bool = False,
+    history: Optional[List[Dict]] = None,
 ) -> str:
-    """Assemble the system instructions, context, and user question into an LLM prompt."""
-    normalized_style = str(answer_style).capitalize()
+    """Assemble the system instructions, context, conversation history, and user question into an LLM prompt."""
+    normalized_style = str(answer_style).strip().capitalize()
     if normalized_style in ("Low", "Simple"):
         style_instruction = (
-            "Effort Level: LOW. Provide a concise, direct, and brief response focusing strictly on "
-            "the core answer and key points. Keep sentences straightforward and avoid unnecessary elaboration."
+            "Effort Level: LOW. Provide a concise, direct, and straightforward answer addressing "
+            "all asked questions without unnecessary fluff or filler, but ensure the answer is 100% complete "
+            "with zero cutoffs or omitted points."
         )
     elif normalized_style in ("High", "Detailed", "Academic"):
         style_instruction = (
-            "Effort Level: HIGH. Provide an exhaustive, deeply comprehensive explanation. Include thorough "
-            "technical context, nuance, in-depth breakdowns, underlying mechanics, and step-by-step reasoning "
-            "as supported by the context."
+            "Effort Level: HIGH. Provide an exhaustive, deeply comprehensive, and in-depth explanation. "
+            "Thoroughly analyze and unpack all concepts, background, underlying mechanics, step-by-step reasoning, "
+            "examples, nuances, and implications supported by the context. Do NOT abbreviate, truncate, or summarize "
+            "prematurely; deliver the entire full answer."
         )
     else:  # Medium / default
         style_instruction = (
-            "Effort Level: MEDIUM. Provide a balanced, clear, and well-structured answer with standard explanations, "
-            "helpful context, and bullet points where useful."
+            "Effort Level: MEDIUM. Provide a balanced, thorough, and well-structured answer with clear explanations, "
+            "helpful context, bullet points where useful, and full coverage of all questions asked."
         )
 
     exam_instruction = ""
@@ -43,16 +47,33 @@ def build_prompt(
             "Advantages, Disadvantages, Complexity.\n"
         )
 
-    return f"""You are a document assistant. Answer the user's question using ONLY the provided document context below.
+    history_section = ""
+    if history:
+        turns = []
+        for msg in history[-4:]:
+            role_name = "User" if msg.get("role") == "user" else "Assistant"
+            text = msg.get("content", "").strip()
+            if not text:
+                continue
+            # Keep previous turns compact so context focuses on new documents
+            if role_name == "Assistant" and len(text) > 400:
+                text = text[:400] + "..."
+            turns.append(f"{role_name}: {text}")
+        if turns:
+            history_section = "Recent Conversation Context:\n" + "\n".join(turns) + "\n\n"
 
-Rules:
-1. Prefer information from the provided context above your own general knowledge.
-2. Do not invent facts that are not supported by the context.
-3. If the answer is not present in the context, clearly say: "I couldn't find enough information about this topic in the uploaded documents."
-4. {style_instruction}
-5. Do not claim information comes from the documents if it does not appear in the context.
+    return f"""You are an expert document assistant. Answer the user's question using ONLY the provided document context below.
+
+CRITICAL RULES:
+1. COMPLETENESS MANDATE: You MUST provide a complete, fully finished response. Do NOT stop midway, truncate thoughts, or cut off sentences.
+2. MULTI-QUESTION COVERAGE: If the user asks multiple questions or requests multiple items, you MUST address and answer EVERY SINGLE ONE thoroughly. Never skip any question.
+3. EFFORT LEVEL: Strictly follow the requested effort level below:
+   {style_instruction}
+4. FACTUALITY: Prefer information from the provided context above your own general knowledge. Do not invent facts that are not supported by the context.
+5. If the answer is not present in the context, clearly say: "I couldn't find enough information about this topic in the uploaded documents."
+6. Do not claim information comes from the documents if it does not appear in the context.
 {exam_instruction}
-Document Context:
+{history_section}Document Context:
 ---
 {context}
 ---

@@ -1,7 +1,7 @@
 """Response synthesis module for question answering, summarization, and suggested queries."""
 
 import time
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from src.config.settings import TOP_K
 from src.retrieval.retriever import retrieve_relevant_chunks
@@ -10,19 +10,32 @@ from src.generation.prompt import build_context, build_prompt
 from src.generation.llm import generate_response, LLMNotConfiguredError, is_configured
 
 
-def generate_answer(prompt: str) -> str:
-    """Invoke LLM service to produce an answer for the given prompt."""
-    return generate_response(prompt)
+def get_effort_parameters(answer_style: str = "Medium") -> Dict[str, int]:
+    """Return top_k chunk retrieval and max_tokens limits scaled by effort level."""
+    normalized = str(answer_style).strip().capitalize()
+    if normalized in ("Low", "Simple"):
+        return {"top_k": 5, "max_tokens": 2048}
+    elif normalized in ("High", "Detailed", "Academic"):
+        return {"top_k": 15, "max_tokens": 8192}
+    else:  # Medium / default
+        return {"top_k": 8, "max_tokens": 4096}
+
+
+def generate_answer(prompt: str, max_tokens: Optional[int] = None) -> str:
+    """Invoke LLM service to produce an answer for the given prompt with specific or default token ceiling."""
+    return generate_response(prompt, max_tokens=max_tokens)
 
 
 def answer_question(
     query: str,
     store: VectorStore,
-    top_k: int = TOP_K,
-    answer_style: str = "Simple",
+    top_k: Optional[int] = None,
+    answer_style: str = "Medium",
     exam_mode: bool = False,
+    history: Optional[List[Dict]] = None,
+    max_tokens: Optional[int] = None,
 ) -> Dict:
-    """Execute end-to-end RAG question answering pipeline."""
+    """Execute end-to-end RAG question answering pipeline scaled to effort level."""
     query = query.strip()
     if not query:
         return {
@@ -36,7 +49,11 @@ def answer_question(
             "sources": [], "chunks": [], "found_context": False,
         }
 
-    retrieved = retrieve_relevant_chunks(query, store, top_k=top_k)
+    effort_params = get_effort_parameters(answer_style)
+    effective_top_k = top_k if top_k is not None else effort_params["top_k"]
+    effective_max_tokens = max_tokens if max_tokens is not None else effort_params["max_tokens"]
+
+    retrieved = retrieve_relevant_chunks(query, store, top_k=effective_top_k)
 
     if not retrieved:
         return {
@@ -49,10 +66,12 @@ def answer_question(
         }
 
     context = build_context(retrieved)
-    prompt = build_prompt(query, context, answer_style=answer_style, exam_mode=exam_mode)
+    prompt = build_prompt(
+        query, context, answer_style=answer_style, exam_mode=exam_mode, history=history
+    )
 
     try:
-        answer_text = generate_answer(prompt)
+        answer_text = generate_answer(prompt, max_tokens=effective_max_tokens)
     except LLMNotConfiguredError as exc:
         return {"answer": str(exc), "sources": [], "chunks": [], "found_context": False}
     except RuntimeError as exc:

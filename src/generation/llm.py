@@ -38,8 +38,14 @@ class LLMNotConfiguredError(Exception):
     pass
 
 
-def generate_response(prompt: str) -> str:
-    """Send prompt to the configured LLM endpoint and return the text response with retry backoff and fallback."""
+from typing import Optional, List, Dict
+
+def generate_response(prompt: str, max_tokens: Optional[int] = None) -> str:
+    """Send prompt to the configured LLM endpoint and return the full text response.
+    
+    If an output gets truncated due to length limits, automatically issues continuation
+    requests to ensure complete, uncut answers.
+    """
     api_key, base_url, primary_model = get_llm_config()
 
     if not api_key:
@@ -52,6 +58,8 @@ def generate_response(prompt: str) -> str:
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
+
+    effective_max_tokens = max_tokens if max_tokens is not None else LLM_MAX_TOKENS
 
     # If calling Google Gemini, configure resilient fallback models in case the primary experiences temporary spikes
     models_to_try = [primary_model]
@@ -70,7 +78,7 @@ def generate_response(prompt: str) -> str:
         payload = {
             "model": current_model,
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": LLM_MAX_TOKENS,
+            "max_tokens": effective_max_tokens,
             "temperature": LLM_TEMPERATURE,
         }
 
@@ -78,7 +86,7 @@ def generate_response(prompt: str) -> str:
         max_attempts = 3 if model_idx == 0 else 2
         for attempt in range(max_attempts):
             try:
-                response = requests.post(url, headers=headers, json=payload, timeout=60)
+                response = requests.post(url, headers=headers, json=payload, timeout=90)
                 if response.status_code in (429, 500, 502, 503, 504):
                     wait_sec = 2.0 * (attempt + 1)
                     try:
@@ -119,9 +127,51 @@ def generate_response(prompt: str) -> str:
                     break
 
                 data = response.json()
-                msg_obj = data["choices"][0].get("message", {})
+                choice = data["choices"][0]
+                msg_obj = choice.get("message", {})
                 content = msg_obj.get("content") or ""
-                return content.strip()
+                finish_reason = choice.get("finish_reason")
+
+                full_content = content
+
+                # Auto-continuation: if response stopped due to length, seamlessly continue until complete
+                continuation_count = 0
+                max_continuations = 3
+                while finish_reason == "length" and continuation_count < max_continuations:
+                    continuation_count += 1
+                    cont_messages = [
+                        {"role": "user", "content": prompt},
+                        {"role": "assistant", "content": full_content},
+                        {
+                            "role": "user",
+                            "content": (
+                                "Your previous response was cut off because of length. "
+                                "Please continue writing the rest of the answer directly from where you stopped. "
+                                "Do NOT repeat what you already wrote; simply complete the remaining answer in full."
+                            ),
+                        },
+                    ]
+                    cont_payload = {
+                        "model": current_model,
+                        "messages": cont_messages,
+                        "max_tokens": effective_max_tokens,
+                        "temperature": LLM_TEMPERATURE,
+                    }
+                    try:
+                        cont_res = requests.post(url, headers=headers, json=cont_payload, timeout=90)
+                        if cont_res.ok:
+                            cont_data = cont_res.json()
+                            cont_choice = cont_data["choices"][0]
+                            cont_text = cont_choice.get("message", {}).get("content") or ""
+                            finish_reason = cont_choice.get("finish_reason")
+                            if cont_text:
+                                full_content += "\n" + cont_text.lstrip()
+                        else:
+                            break
+                    except Exception:
+                        break
+
+                return full_content.strip()
             except requests.exceptions.RequestException as exc:
                 last_error = str(exc)
                 if attempt < max_attempts - 1:
